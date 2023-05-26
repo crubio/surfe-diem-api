@@ -1,0 +1,26 @@
+[
+    {
+        "location_id": 46269,
+        "name": "Station 46269 - Point Santa Cruz, CA (254)",
+        "url": "https://www.ndbc.noaa.gov/station_page.php?station=46269",
+        "active": true,
+        "date_updated": "",
+        "date_created": ""
+    },
+    {
+        "location_id": 46276,
+        "name": "Station 46276 - Pajaro Beach, CA",
+        "url": "https://www.ndbc.noaa.gov/station_page.php?station=46276",
+        "active": true,
+        "date_updated": "",
+        "date_created": ""
+    },
+    {
+        "location_id": "MLSC1",
+        "name": "Station MLSC1 - Moss Landing, South Harbor, CA",
+        "url": "https://www.ndbc.noaa.gov/station_page.php?station=MLSC1",
+        "active": true,
+        "date_updated": "",
+        "date_created": ""
+    }
+]

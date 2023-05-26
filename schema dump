@@ -1,0 +1,11 @@
+schema dump
+Column    |          Type          | Collation | Nullable |                 Default                  | Storage  | Compression | Stats target | Description 
+--------------+------------------------+-----------+----------+------------------------------------------+----------+-------------+--------------+-------------
+ name         | character varying      |           | not null |                                          | extended |             |              | 
+ location_id  | character varying      |           | not null |                                          | extended |             |              | 
+ url          | text                   |           |          |                                          | extended |             |              | 
+ date_created | time without time zone |           | not null | '13:25:29.11704'::time without time zone | plain    |             |              | 
+ id           | integer                |           | not null | nextval('locations_id_seq'::regclass)    | plain    |             |              | 
+ date_updated | time without time zone |           | not null | '13:25:29.11704'::time without time zone | plain    |             |              | 
+ active       | boolean                |           | not null | true                                     | plain    |       
+

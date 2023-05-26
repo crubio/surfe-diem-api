@@ -1,0 +1,10 @@
+//important queries for later
+
+select * from locations
+LEFT JOIN user_location ON locations.id = user_location.location_id
+WHERE user_location.user_id = 1
+
+select locations.*, COUNT(locations.id) from locations
+LEFT JOIN user_location ON locations.id = user_location.location_id
+WHERE user_location.user_id = 1
+GROUP BY locations.id
