@@ -47,14 +47,13 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     return {"count": spots}
 
 @router.get("/locations/{id}", response_model=LocationResponse)
-def get_location(id: Union[int, str], db: Session = Depends(get_db)):
+def get_location(id: str, db: Session = Depends(get_db)):
     '''Get by location_id'''
-    # fix this to use id or location_id string
-    # if type(id) == int:
-    #     location = db.query(models.Location).filter(models.Location.id == id).first()
-    # else:
-    #     location = db.query(models.Location).filter(models.Location.location_id == id).first()
-    location = db.query(models.Location).filter(models.Location.location_id == id).first()
+    # TODO: get by location id
+    location = db.query(models.Location).filter(models.Location.id == id).first()
+
+    if not location:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {id} not found")
     return location
 
 # should be an admin only route - add later
