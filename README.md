@@ -38,7 +38,7 @@ http://127.0.0.1:8000/docs
 ````
 
 ## Setting up postgres
-Create a database in postgres then create a file name .env and write the following things in you file 
+Create a database in postgres then create a file name .env and write the following things in your file 
 
 ````
 DATABASE_HOSTNAME = localhost
@@ -51,4 +51,7 @@ ALGORITHM = HS256
 ACCESS_TOKEN_EXPIRE_MINUTES = 60(base)
 
 ````
+
+You can also use docker to do this if you prefer to run postgres in a container with `docker-compose -f docker-compose.yml up`. Use `psql` to create the database specified in .env
+
 ### Note: SECRET_KEY in this exmple is just a psudo key. You need to get a key for youself and you can get the SECRET_KEY  from fastapi documantion 
