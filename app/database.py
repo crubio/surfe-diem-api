@@ -23,7 +23,7 @@ def get_db():
 # while True:
 #     try:
 #         conn = psycopg2.connect(host='localhost', database='surfe_diem_api', 
-#         user='postgres', password='bellacat', cursor_factory=RealDictCursor)
+#         user='postgres', password='password', cursor_factory=RealDictCursor)
 #         cursor = conn.cursor()
 #         print("Connected to database")
 #         break
