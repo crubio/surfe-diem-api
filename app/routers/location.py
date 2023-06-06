@@ -30,6 +30,8 @@ def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: 
         models.UserLocation, models.UserLocation.location_id == models.Location.id, isouter=True
     ).where(
         models.UserLocation.user_id == current_user.id
+    ).group_by(
+        models.Location.id
     ).limit(
         limit
     ).all()

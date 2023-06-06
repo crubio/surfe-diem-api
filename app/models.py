@@ -19,6 +19,22 @@ class Location(Base):
     date_updated = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     creator_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
+class LocationNoaaLatest(Base):
+    __tablename__ = "locations_noaa_latest"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
+
+class LocationNoaaHistory(Base):
+    __tablename__ = "locations_noaa_history"
+    id = Column(Integer, primary_key=True, nullable=False)
+    location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
+
+class LocationNoaaSummary(Base):
+    __tablename__ = "locations_noaa_summary"
+    id = Column(Integer, primary_key=True, nullable=False)
+    location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, nullable=False)
