@@ -3,3 +3,5 @@ venv/
 .env
 assets
 migration_tools
+scratchpad
+*.log

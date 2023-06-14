@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, oauth2
-from ..schemas import (Location, LocationPost, LocationResponse)
+from ..schemas import (Location, LocationPost, LocationResponse, LocationPut)
 
 router = APIRouter(
     prefix="/api/v1",
@@ -68,7 +68,7 @@ def create_location(location: LocationPost, db: Session = Depends(get_db), curre
         db.commit()
         db.refresh(new_location)
     except (SQLAlchemyError, DBAPIError) as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="something went wrong, please try again")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="something went wrong, please try again", message=f"{e}")
     
     return new_location
 
@@ -92,17 +92,17 @@ def delete_location(id: str, db: Session = Depends(get_db), current_user = Depen
 
 # should be an admin only route - add later
 @router.put("/locations/{id}", response_model=LocationResponse)
-def update_location(id: int, location: LocationPost, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+def update_location(id: int, updated_location: LocationPut, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     '''update a location based on location id'''
     query = db.query(models.Location).filter(models.Location.id == id)
-    updated_location = query.first()
+    current_location = query.first()
 
-    if updated_location == None:
+    if current_location == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location id: {id} not found")
 
-    if updated_location.creator_id != current_user.id:
+    if current_user.is_admin == False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
-    query.update(location.dict(), synchronize_session=False)
+    query.update(updated_location.dict(exclude_unset=True), synchronize_session=False)
     db.commit()
     return query.first()

@@ -8,16 +8,23 @@ class Location(BaseModel):
     name: str
     url: Optional[str] = None
     active: Optional[bool] = True
+    description: Optional[str]
+    depth: Optional[str]
+    elevation: Optional[str]
+    location: Optional[str]
 
 class LocationPost(Location):
     '''Our base schema for POSTing a new location'''
     location_id: str
 
+class LocationPut(Location):
+    name: Optional[str]
+
 class LocationResponse(LocationPost):
     '''Response shape'''
     id: int
     date_created: Optional[datetime]
-    creator_id: int
+    date_updated: Optional[datetime]
     
     class Config:
         orm_mode = True

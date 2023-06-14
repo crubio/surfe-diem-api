@@ -34,6 +34,20 @@ class LocationNoaaSummary(Base):
     __tablename__ = "locations_noaa_summary"
     id = Column(Integer, primary_key=True, nullable=False)
     location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
+    timestamp = Column(String)
+    date_created = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    wvht = Column(String)
+    precipitation = Column(String)
+    wind = Column(String)
+    gust = Column(String)
+    peak_period = Column(String)
+    water_temp = Column(String)
+    swell = Column(String)
+    period = Column(String)
+    direction = Column(String)
+    wind_wave = Column(String)
+    ww_period = Column(String)
+    ww_direction = Column(String)
 
 class User(Base):
     __tablename__ = "users"
