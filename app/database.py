@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from .config import settings
+import time
 
 SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -20,13 +21,13 @@ def get_db():
         db.close()
 
 # for running raw SQL commands
-# while True:
-#     try:
-#         conn = psycopg2.connect(host='localhost', database='surfe_diem_api', 
-#         user='postgres', password='password', cursor_factory=RealDictCursor)
-#         cursor = conn.cursor()
-#         print("Connected to database")
-#         break
-#     except Exception as error:
-#         print(f"Connecting to database failed: {error}")
-#         time.sleep(3)
+while True:
+    try:
+        conn = psycopg2.connect(host=settings.database_hostname, database=settings.database_name, 
+        user=settings.database_username, password=settings.database_password, cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print("Connected to database")
+        break
+    except Exception as error:
+        print(f"Connecting to database failed: {error}")
+        time.sleep(10)
