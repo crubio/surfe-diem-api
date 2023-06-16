@@ -10,11 +10,12 @@ load_dotenv()
 #    database=os.environ.get('DATABASE_NAME'), user=os.environ.get('DATABASE_USERNAME'), password=os.environ.get('DATABASE_PASSWORD'),
 #    host=os.environ.get('DATABASE_HOSTNAME'), port=os.environ.get('DATABASE_PORT')
 # )
-conn = psycopg2.connect(database_url=os.environ.get('DATABASE_URL'))
+
+conn = psycopg2.connect(f"postgresql://{os.environ.get('DATABASE_USERNAME')}:{os.environ.get('DATABASE_PASSWORD')}@{os.environ.get('DATABASE_HOSTNAME')}:{os.environ.get('DATABASE_PORT')}/{os.environ.get('DATABASE_NAME')}")
 
 # from sqlalchemy import create_engine - this is a working example of how to connect to the database
 # SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
-# engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
 
 def import_locations(json_data_file):
     '''runs the import from our json file'''
