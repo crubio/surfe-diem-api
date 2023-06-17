@@ -4,7 +4,7 @@ import psycopg2
 import json
 from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 conn = psycopg2.connect(
    database=os.environ.get('DATABASE_NAME'), user=os.environ.get('DATABASE_USERNAME'), password=os.environ.get('DATABASE_PASSWORD'),
