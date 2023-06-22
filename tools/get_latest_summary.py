@@ -22,7 +22,7 @@ conn = psycopg2.connect(
 
 # Examples for testing
 # example url: https://www.ndbc.noaa.gov/data/latest_obs/46042.txt
-# local_file_sample = "file:////Users/crubio/Projects/surfe-diem-api/migration_tools/46042.txt"
+# local_file_sample = "file:////Users/$USER/Projects/surfe-diem-api/migration_tools/46042.txt"
 
 # maps to the table names
 summary_props = {
@@ -40,8 +40,8 @@ summary_props = {
 }
 
 def main():
-    timestamp = dt.now().strftime("%Y%m%dT%H")
-    logging.basicConfig(filename=f'latest_summary_{timestamp}.log', filemode='w', level=logging.DEBUG)
+    # timestamp = dt.now().strftime("%Y%m%dT%H")
+    # logging.basicConfig(filename=f'../logs/latest_summary_{timestamp}.log', filemode='w', level=logging.DEBUG)
     for id in station_ids:
         summary = get_latest_summary(id)
         import_summary(summary, id)

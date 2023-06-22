@@ -82,7 +82,7 @@ def delete_location(id: str, db: Session = Depends(get_db), current_user = Depen
     if location == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location '{id}' not found")
 
-    if location.creator_id != current_user.id:
+    if current_user.is_admin == False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
     # consider sync strategy here
