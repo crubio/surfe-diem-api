@@ -29,6 +29,29 @@ class LocationResponse(LocationPost):
     class Config:
         orm_mode = True
 
+# Weather Data
+class LocationNOAASummary(BaseModel):
+    '''Summary of NOAA data response'''
+    id: int
+    location_id: str
+    timestamp: datetime
+    date_created: datetime
+    wvht: Optional[str]
+    precipitation: Optional[str]
+    wind: Optional[str]
+    gust: Optional[str]
+    peak_period: Optional[str]
+    water_temp: Optional[str]
+    swell: Optional[str]
+    period: Optional[str]
+    direction: Optional[str]
+    wind_wave: Optional[str]
+    ww_period: Optional[str]
+    ww_direction: Optional[str]
+
+    class Config:
+        orm_mode = True
+
 
 # Users
 class UserCreate(BaseModel):
