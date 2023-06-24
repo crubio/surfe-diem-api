@@ -1,14 +1,16 @@
 '''main app module'''
 from . import models
-from .database import engine
+from .database import engine, conn
 from fastapi import FastAPI
 from .routers import location, user, auth, user_location
 from fastapi.middleware.cors import CORSMiddleware
-
+from .utils.test_db_conn import test
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+test()
 
 # configure this for a specific web app if we want to close down the API.
 origins = ["*"]
