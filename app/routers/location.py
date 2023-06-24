@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, oauth2
-from ..schemas import (Location, LocationPost, LocationResponse, LocationPut)
+from ..schemas import (LocationNOAASummary, LocationPost, LocationResponse, LocationPut)
 
 router = APIRouter(
     prefix="/api/v1",
@@ -17,13 +17,12 @@ router = APIRouter(
 
 @router.get("/locations", response_model=List[LocationResponse])
 def get_locations(db: Session = Depends(get_db), limit: int = 10, search: Optional[str] = ""):
-    locations = db.query(models.Location).filter(models.Location.name.contains(search)).limit(limit).all()
+    locations = db.query(models.Location).filter(models.Location.name.contains(search), models.Location.active == True).limit(limit).all()
     return locations
 
 @router.get("/locations/spots", response_model=List[LocationResponse])
 def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):
     '''Get a list of saved locations'''
-    # locations = db.query(models.Location).limit(limit).all()
     spots = db.query(
         models.Location, func.count(models.Location.id)
     ).join(
@@ -48,20 +47,36 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     ).count()
     return {"count": spots}
 
-@router.get("/locations/{id}", response_model=LocationResponse)
-def get_location(id: str, db: Session = Depends(get_db)):
+@router.get("/locations/{location_id}", response_model=LocationResponse)
+def get_location(location_id: str, db: Session = Depends(get_db)):
     '''Get by location_id'''
-    # TODO: get by location id
-    location = db.query(models.Location).filter(models.Location.id == id).first()
+    location = db.query(models.Location).filter(models.Location.location_id == location_id, models.Location.active == True).first()
 
     if not location:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {id} not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location id {location_id} not found")
     return location
+
+@router.get("/locations/{location_id}/latest", response_model=LocationNOAASummary)
+def get_location(location_id: str, db: Session = Depends(get_db)):
+    '''get latest wave summary for this location id'''
+    location_summary = db.query(
+        models.LocationNoaaSummary
+    ).filter(
+        models.LocationNoaaSummary.location_id == location_id,
+    ).order_by(
+        models.LocationNoaaSummary.timestamp.desc()
+    ).first()
+    if not location_summary:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
+    return location_summary
 
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=LocationResponse)
 def create_location(location: LocationPost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     '''Create a location & return the new location'''
+    if current_user.is_admin == False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    
     new_location = models.Location(creator_id=current_user.id, **location.dict())
     db.add(new_location)
     try:
