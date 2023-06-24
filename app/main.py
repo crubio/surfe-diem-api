@@ -29,6 +29,11 @@ app.include_router(user_location.router)
 
 # path operation (route)
 @app.get("/api/v1")
+def api_root():
+    '''docstring'''
+    return {"message": "hello from surfe-diem"}
+
+@app.get("/")
 def root():
     '''docstring'''
     return {"message": "hello from surfe-diem"}
