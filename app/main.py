@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url="/api/v1")
 
 # configure this for a specific web app if we want to close down the API.
 origins = ["*"]
@@ -26,12 +26,7 @@ app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(user_location.router)
 
-# path operation (route)
-@app.get("/api/v1")
-def api_root():
-    '''docstring'''
-    return {"message": "hello from surfe-diem"}
-
+# path operation (route) decorator
 @app.get("/")
 def root():
     '''docstring'''
