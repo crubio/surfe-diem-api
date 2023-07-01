@@ -19,8 +19,9 @@ def delete_old_summaries():
         cursor.execute('''DELETE FROM locations_noaa_summary WHERE date_created < NOW() - INTERVAL '48 hours';''')
         conn.commit()
         logging.info(f"Deleted {cursor.rowcount} rows")
+        print(f"Deleted {cursor.rowcount} rows")
     except Exception as error:
-        logging.error(f"Error deleting rows: {error}")
+        logging.warning(f"Error deleting rows: {error}")
         conn.rollback()
     conn.close()
     return
