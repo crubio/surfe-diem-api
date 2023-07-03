@@ -1,9 +1,7 @@
 from typing import List, Union, Optional
-import json
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status, APIRouter
+from fastapi import Depends, HTTPException, Response, status, APIRouter
 from sqlalchemy import func
-from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -82,8 +80,9 @@ def create_location(location: LocationPost, db: Session = Depends(get_db), curre
     try:
         db.commit()
         db.refresh(new_location)
-    except (SQLAlchemyError, DBAPIError) as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="something went wrong, please try again", message=f"{e}")
+    except:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="something went wrong, please try again")
     
     return new_location
 
