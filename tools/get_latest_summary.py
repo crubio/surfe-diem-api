@@ -89,15 +89,16 @@ def parse_summary(summary: list, id: int, is_wind_wave = False):
     result = {}
     for index, row in enumerate(summary):
         try:
-            if index == 0:
+            if is_wind_wave:
+                if index == 0:
+                    result[summary_props[row[0]]] = row[1] or ""
+                else:
+                    ww_key = f"ww_{summary_props[row[0]]}"
+                    result[ww_key] = row[1] or ""
+            elif index == 0:
                 continue
-            elif len(row) <= 1:
-                # timestamp row
+            elif len(row) <= 1: # this is a timestamp row
                 result['timestamp'] = format_timestamp(row[0])
-            elif is_wind_wave:
-                ww_key = f"ww_{summary_props[row[0]]}"
-                value = row[1] or ""
-                result[ww_key] = value
             else:
                 key = summary_props[row[0]]
                 value = row[1] or ""
@@ -146,7 +147,6 @@ def get_latest_summary(id: int):
                     wave_summary.append(parts)
             else:
                 location_summary.append(parts)
-        
         return {
             **location_object,
             **parse_summary(location_summary, id),

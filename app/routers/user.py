@@ -28,6 +28,10 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="something went wrong, please try again later.")
     return new_user
 
+@router.get("/users/me", response_model=UserResponse)
+def get_me(current_user: int = Depends(oauth2.get_current_user)):
+  return current_user
+
 @router.get("/users/{id}", response_model=UserResponse)
 def get_user(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     user_query = db.query(models.User).filter(models.User.id == id)
