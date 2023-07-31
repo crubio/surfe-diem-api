@@ -49,6 +49,27 @@ class LocationNoaaSummary(Base):
     ww_period = Column(String)
     ww_direction = Column(String)
 
+class LocationLatestObservation(Base):
+    __tablename__ = "locations_latest_observation"
+    id = Column(Integer, primary_key=True, nullable=False)
+    location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
+    timestamp = Column(String)
+    title = Column(String)
+    href = Column(String)
+    published = Column(String)
+    location = Column(String)
+    wind_speed = Column(String)
+    dominant_wave_period = Column(String)
+    dew_point = Column(String)
+    water_temp = Column(String)
+    mean_wave_direction = Column(String)
+    wind_gust = Column(String)
+    average_period = Column(String)
+    wind_direction = Column(String)
+    air_temp = Column(String)
+    atmospheric_pressure = Column(String)
+    significant_wave_height = Column(String)
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, nullable=False)

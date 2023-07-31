@@ -45,6 +45,20 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     ).count()
     return {"count": spots}
 
+@router.get("/locations/summary", response_model=List[LocationNOAASummary])
+def get_locations_summary(db: Session = Depends(get_db), limit: int = 50, current_user: int = Depends(oauth2.get_current_user)):
+    '''Get a list of the last n summaries'''
+    if current_user.is_admin == False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    location_summary = db.query(
+        models.LocationNoaaSummary
+    ).order_by(
+        models.LocationNoaaSummary.timestamp.desc()
+    ).limit(
+        limit
+    ).all()
+    return location_summary
+
 @router.get("/locations/{location_id}", response_model=LocationResponse)
 def get_location(location_id: str, db: Session = Depends(get_db)):
     '''Get by location_id'''
