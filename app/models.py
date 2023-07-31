@@ -53,10 +53,11 @@ class LocationLatestObservation(Base):
     __tablename__ = "locations_latest_observation"
     id = Column(Integer, primary_key=True, nullable=False)
     location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
-    timestamp = Column(String)
+    date_created = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
+    timestamp = Column(TIMESTAMP(timezone=False), nullable=False)
     title = Column(String)
     href = Column(String)
-    published = Column(String)
+    published = Column(TIMESTAMP(timezone=False), nullable=False)
     location = Column(String)
     wind_speed = Column(String)
     dominant_wave_period = Column(String)

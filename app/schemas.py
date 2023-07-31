@@ -56,10 +56,11 @@ class LocationLatestObservation(BaseModel):
     '''Summary of NOAA latest observation rss feed'''
     id: int
     location_id: str
+    date_created: datetime
     timestamp: datetime
     title: str
     href: str
-    published: str
+    published: datetime
     wind_speed: Optional[str]
     dominant_wave_period: Optional[str]
     dew_point: Optional[str]
