@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, oauth2
-from ..schemas import (LocationNOAASummary, LocationPost, LocationResponse, LocationPut)
+from ..schemas import (LocationNOAASummary, LocationPost, LocationResponse, LocationPut, LocationLatestObservation)
 
 router = APIRouter(
     prefix="/api/v1",
@@ -45,6 +45,30 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     ).count()
     return {"count": spots}
 
+@router.get("/locations/summary", response_model=List[LocationNOAASummary])
+def get_locations_summary(db: Session = Depends(get_db), limit: int = 50):
+    '''Get a list of the last n summaries'''
+    location_summary = db.query(
+        models.LocationNoaaSummary
+    ).order_by(
+        models.LocationNoaaSummary.timestamp.desc()
+    ).limit(
+        limit
+    ).all()
+    return location_summary
+
+@router.get("/locations/latest-observations", response_model=List[LocationLatestObservation])
+def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
+    '''Get a list of all latest observations from NOAA rss feed'''
+    latest_observations = db.query(
+        models.LocationLatestObservation
+    ).order_by(
+        models.LocationLatestObservation.published.desc()
+    ).limit(
+        limit
+    ).all()
+    return latest_observations
+
 @router.get("/locations/{location_id}", response_model=LocationResponse)
 def get_location(location_id: str, db: Session = Depends(get_db)):
     '''Get by location_id'''
@@ -67,6 +91,18 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
     if not location_summary:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     return location_summary
+
+@router.get("/locations/{location_id}/latest-observation", response_model=LocationLatestObservation)
+def get_location_latest_observation(location_id: str, db: Session = Depends(get_db)):
+    '''get latest observation for this location id'''
+    location_latest_observation = db.query(
+        models.LocationLatestObservation
+    ).filter(
+        models.LocationLatestObservation.location_id == location_id,
+    ).order_by(
+        models.LocationLatestObservation.published.desc()
+    ).first()
+    return location_latest_observation
 
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=LocationResponse)

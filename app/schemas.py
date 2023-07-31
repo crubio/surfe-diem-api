@@ -52,6 +52,30 @@ class LocationNOAASummary(BaseModel):
     class Config:
         orm_mode = True
 
+class LocationLatestObservation(BaseModel):
+    '''Summary of NOAA latest observation rss feed'''
+    id: int
+    location_id: str
+    date_created: datetime
+    timestamp: datetime
+    title: str
+    href: str
+    published: datetime
+    wind_speed: Optional[str]
+    dominant_wave_period: Optional[str]
+    dew_point: Optional[str]
+    water_temp: Optional[str]
+    mean_wave_direction: Optional[str]
+    wind_gust: Optional[str]
+    average_period: Optional[str]
+    location: Optional[str]
+    wind_direction: Optional[str]
+    air_temp: Optional[str]
+    atmospheric_pressure: Optional[str]
+    significant_wave_height: Optional[str]
+
+    class Config:
+        orm_mode = True
 
 # Users
 class UserCreate(BaseModel):
