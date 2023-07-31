@@ -92,6 +92,18 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     return location_summary
 
+@router.get("/locations/{location_id}/latest-observation", response_model=LocationLatestObservation)
+def get_location_latest_observation(location_id: str, db: Session = Depends(get_db)):
+    '''get latest observation for this location id'''
+    location_latest_observation = db.query(
+        models.LocationLatestObservation
+    ).filter(
+        models.LocationLatestObservation.location_id == location_id,
+    ).order_by(
+        models.LocationLatestObservation.published.desc()
+    ).first()
+    return location_latest_observation
+
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=LocationResponse)
 def create_location(location: LocationPost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
