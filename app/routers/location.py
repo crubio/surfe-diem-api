@@ -15,7 +15,11 @@ router = APIRouter(
 
 @router.get("/locations", response_model=List[LocationResponse])
 def get_locations(db: Session = Depends(get_db), limit: int = 10, search: Optional[str] = ""):
-    locations = db.query(models.Location).filter(models.Location.name.contains(search), models.Location.active == True).limit(limit).all()
+    query = db.query(models.Location)
+    filters = [models.Location.active == True]
+    if search:
+        filters.append(models.Location.name.match(search))
+    locations = query.filter(*filters).limit(limit).all()
     return locations
 
 @router.get("/locations/spots", response_model=List[LocationResponse])
