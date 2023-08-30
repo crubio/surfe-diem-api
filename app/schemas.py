@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 # Locations
-class Location(BaseModel):
+class BuoyLocation(BaseModel):
     '''Our base schema for location'''
     name: str
     url: Optional[str] = None
@@ -13,14 +13,14 @@ class Location(BaseModel):
     elevation: Optional[str]
     location: Optional[str]
 
-class LocationPost(Location):
+class BuoyLocationPost(BuoyLocation):
     '''Our base schema for POSTing a new location'''
     location_id: str
 
-class LocationPut(Location):
+class BuoyLocationPut(BuoyLocation):
     name: Optional[str]
 
-class LocationResponse(LocationPost):
+class BuoyLocationResponse(BuoyLocationPost):
     '''Response shape'''
     id: int
     date_created: Optional[datetime]
@@ -30,7 +30,7 @@ class LocationResponse(LocationPost):
         orm_mode = True
 
 # Weather Data
-class LocationNOAASummary(BaseModel):
+class BuoyLocationNOAASummary(BaseModel):
     '''Summary of NOAA data response'''
     id: int
     location_id: str
@@ -52,7 +52,7 @@ class LocationNOAASummary(BaseModel):
     class Config:
         orm_mode = True
 
-class LocationLatestObservation(BaseModel):
+class BuoyLocationLatestObservation(BaseModel):
     '''Summary of NOAA latest observation rss feed'''
     id: int
     location_id: str

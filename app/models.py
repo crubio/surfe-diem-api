@@ -3,7 +3,7 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
 from .database import Base
 
-class Location(Base):
+class BuoyLocation(Base):
     __tablename__ = "locations"
 
     id = Column(Integer, primary_key=True, nullable=False)
@@ -19,18 +19,18 @@ class Location(Base):
     date_updated = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     creator_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
-class LocationNoaaLatest(Base):
+class BuoyLocationNoaaLatest(Base):
     __tablename__ = "locations_noaa_latest"
 
     id = Column(Integer, primary_key=True, nullable=False)
     location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
 
-class LocationNoaaHistory(Base):
+class BuoyLocationNoaaHistory(Base):
     __tablename__ = "locations_noaa_history"
     id = Column(Integer, primary_key=True, nullable=False)
     location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
 
-class LocationNoaaSummary(Base):
+class BuoyLocationNoaaSummary(Base):
     __tablename__ = "locations_noaa_summary"
     id = Column(Integer, primary_key=True, nullable=False)
     location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
@@ -49,7 +49,7 @@ class LocationNoaaSummary(Base):
     ww_period = Column(String)
     ww_direction = Column(String)
 
-class LocationLatestObservation(Base):
+class BuoyLocationLatestObservation(Base):
     __tablename__ = "locations_latest_observation"
     id = Column(Integer, primary_key=True, nullable=False)
     location_id = Column(String, ForeignKey("locations.location_id", ondelete="SET NULL"), nullable=True)
