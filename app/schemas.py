@@ -2,6 +2,23 @@ from pydantic import BaseModel, EmailStr, conint
 from typing import Optional
 from datetime import datetime
 
+# Forecast
+class ForecastBasic(BaseModel):
+    '''Basic forecast response from open-meteo.com
+    See https://open-meteo.com/en/docs for more info
+    '''
+    latitude: float
+    longitude: float
+    hourly: Optional[str]
+    daily: Optional[str]
+    timeformat: Optional[str]
+    timezone: Optional[str]
+    past_days: Optional[int]
+    start_date: Optional[str]
+    end_date: Optional[str]
+    length_unit: Optional[str]
+    cell_selection: Optional[str]
+
 # Locations
 class BuoyLocation(BaseModel):
     '''Our base schema for location'''
