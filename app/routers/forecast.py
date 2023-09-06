@@ -15,7 +15,7 @@ def get_forecast(
     daily: Union[str, None] = None,
     start_date: Union[str, None] = None,
     end_date: Union[str, None] = None,
-    timezone: str = "America/Los_Angeles", 
+    timezone: str = "auto", 
     length_unit: str = "imperial"
     ):
     '''Get a current forecast for a given location'''
