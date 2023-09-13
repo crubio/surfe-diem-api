@@ -10,6 +10,11 @@ from station_ids import *
 
 load_dotenv()
 
+'''
+Check latest observations on NOAA if we are getting errors importing data.
+Files are located here: https://www.ndbc.noaa.gov/data/latest_obs/
+'''
+
 local_rss = "file:///Users/crubio/Projects/surfe-diem-api/data/latest_observation.rss"
 local_xml = "file:///Users/crubio/Projects/surfe-diem-api/data/latest_observation.xml"
 remote_url = "https://www.ndbc.noaa.gov/data/latest_obs/{id}.rss"
