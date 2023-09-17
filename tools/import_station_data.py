@@ -24,22 +24,18 @@ def import_locations(json_data_file):
         data = json.load(data_file)
         for row in data:
             try:
-                cursor.execute('''INSERT INTO locations(location_id, name, url, active, description, elevation, depth, location)
-                    VALUES(%s,%s,%s,%s,%s,%s,%s,%s)''',
+                cursor.execute('''INSERT INTO locations(location_id, name, url, active, description, elevation, depth, location, weight)
+                    VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
                     (
-                        row['location_id'], row['name'], row['url'], True, row['description'], row['elevation'], row['depth'], row['location']
+                        row['location_id'], row['name'], row['url'], True, row['description'], row['elevation'], None, row['location'], row['weight']
                     ))
             except Exception as error:
                 print(f"Error inserting row: {error}")
+                conn.commit()
                 continue
         conn.commit()
     conn.close()
-    return
-
-def import_locations_alt(json_data_file):
-    '''runs the import from our json file'''
-    if not json_data_file:
-        raise Exception('No json file specified')
+    return True
     
 if __name__ == '__main__':
     import_locations(sys.argv[1])

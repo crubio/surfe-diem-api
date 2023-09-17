@@ -18,6 +18,7 @@ class BuoyLocation(Base):
     date_created = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     date_updated = Column(TIMESTAMP(timezone=False), nullable=False, server_default=text('now()'))
     creator_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    weight = Column(Integer, server_default='0', nullable=False)
 
 class BuoyLocationNoaaLatest(Base):
     __tablename__ = "locations_noaa_latest"
@@ -70,6 +71,21 @@ class BuoyLocationLatestObservation(Base):
     air_temp = Column(String)
     atmospheric_pressure = Column(String)
     significant_wave_height = Column(String)
+
+class TideStation(Base):
+    __tablename__ = "tide_stations"
+    id = Column(Integer, primary_key=True, nullable=False)
+    station_id = Column(String, unique=True, nullable=False)
+    station_name = Column(String)
+    latitude = Column(String)
+    longitude = Column(String)
+
+class TideStationBuoyLocation(Base):
+    __tablename__ = "tide_station_buoy_location"
+    id = Column(Integer, primary_key=True, nullable=False)
+    station_id = Column(String, ForeignKey("tide_stations.station_id", ondelete="CASCADE"), nullable=True)
+    location_id = Column(String, ForeignKey("locations.location_id", ondelete="CASCADE"), nullable=True)
+
 
 class User(Base):
     __tablename__ = "users"

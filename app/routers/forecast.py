@@ -7,6 +7,8 @@ router = APIRouter(
     tags=["Forecast"]
 )
 
+forecast_url = "https://marine-api.open-meteo.com/v1/marine"
+
 @router.get("/forecast")
 def get_forecast(
     latitude: float, 
@@ -34,9 +36,8 @@ def get_forecast(
     if end_date:
         params["end_time"] = end_date
 
-    print(params)
     try:
-        r = httpx.get(f"https://marine-api.open-meteo.com/v1/marine", params=params)
+        r = httpx.get(forecast_url, params=params)
         r.raise_for_status()
         return r.json()
     except httpx.RequestError as exc:

@@ -1,7 +1,7 @@
 from typing import List, Union, Optional
 
 from fastapi import Depends, HTTPException, Response, status, APIRouter
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -14,13 +14,33 @@ router = APIRouter(
 )
 
 @router.get("/locations", response_model=List[BuoyLocationResponse])
-def get_locations(db: Session = Depends(get_db), limit: int = 10, search: Optional[str] = ""):
-    query = db.query(models.BuoyLocation)
+def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):
     filters = [models.BuoyLocation.active == True]
+    select_stmt = select(
+        models.BuoyLocation, models.TideStationBuoyLocation.station_id
+        ).select_from(
+            models.BuoyLocation
+        ).join(
+            models.TideStationBuoyLocation, models.BuoyLocation.location_id == models.TideStationBuoyLocation.location_id, isouter=True
+        ).filter(
+            *filters
+        ).order_by(
+            models.BuoyLocation.weight.desc()
+        )
+
     if search:
-        filters.append(models.BuoyLocation.name.match(search))
-    locations = query.filter(*filters).limit(limit).all()
-    return locations
+        select_stmt = select_stmt.where(models.BuoyLocation.name.match(search))
+    
+    select_stmt = select_stmt.limit(limit)
+
+    location = db.execute(select_stmt).all()
+
+    locations_list = []
+    for row in location:
+        row[0].station_id = row[1]
+        locations_list.append(row[0])
+
+    return locations_list
 
 @router.get("/locations/spots", response_model=List[BuoyLocationResponse])
 def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):

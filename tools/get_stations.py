@@ -27,10 +27,9 @@ def get_stations():
         data["location_id"] = str(id)
         data["name"] = station_title
         data["url"] = f"{BUOY_URL}{id}"
-        data["description"] = station_meta[1]
-        data["location"] = station_meta[2]
-        data["elevation"] = station_meta[3]
-        data["depth"] = station_meta[4]
+        data["description"] = station_meta[1] or ''
+        data["location"] = station_meta[2] or '' 
+        data["elevation"] = station_meta[3] or ''
 
         stations.append(dict(data))
         data.clear
