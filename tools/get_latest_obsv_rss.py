@@ -109,7 +109,7 @@ def get_latest_summary(id):
         result['location_id'] = id
         return result
     except Exception as e:
-        logging.warning(f"Could not get latest summary for {id}. Error: {e}")
+        logging.warning(f"Could not get latest summary for {id}. Verify {url} is valid.")
         pass
 
 if __name__ == "__main__":

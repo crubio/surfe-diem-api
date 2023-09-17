@@ -5,5 +5,4 @@ assets
 migration_tools
 local_utils
 migrations
-data
 *.log

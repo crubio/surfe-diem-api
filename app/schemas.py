@@ -29,6 +29,7 @@ class BuoyLocation(BaseModel):
     depth: Optional[str]
     elevation: Optional[str]
     location: Optional[str]
+    weight: Optional[int] = 0
 
 class BuoyLocationPost(BuoyLocation):
     '''Our base schema for POSTing a new location'''
@@ -42,6 +43,7 @@ class BuoyLocationResponse(BuoyLocationPost):
     id: int
     date_created: Optional[datetime]
     date_updated: Optional[datetime]
+    station_id: Optional[str]
     
     class Config:
         orm_mode = True
