@@ -1,14 +1,11 @@
 import logging
 import os
 from urllib.request import urlopen
-import psycopg2
-from psycopg2 import sql
 from dotenv import load_dotenv
 import feedparser
 from bs4 import BeautifulSoup
+import sqlite3 as sql
 from station_ids import *
-
-load_dotenv()
 
 '''
 Check latest observations on NOAA if we are getting errors importing data.
@@ -19,10 +16,15 @@ local_rss = "file:///Users/crubio/Projects/surfe-diem-api/data/latest_observatio
 local_xml = "file:///Users/crubio/Projects/surfe-diem-api/data/latest_observation.xml"
 remote_url = "https://www.ndbc.noaa.gov/data/latest_obs/{id}.rss"
 
-conn = psycopg2.connect(
-   database=os.environ.get('DATABASE_NAME'), user=os.environ.get('DATABASE_USERNAME'), password=os.environ.get('DATABASE_PASSWORD'),
-   host=os.environ.get('DATABASE_HOSTNAME'), port=os.environ.get('DATABASE_PORT')
-)
+# load_dotenv()
+
+# conn = psycopg2.connect(
+#    database=os.environ.get('DATABASE_NAME'), user=os.environ.get('DATABASE_USERNAME'), password=os.environ.get('DATABASE_PASSWORD'),
+#    host=os.environ.get('DATABASE_HOSTNAME'), port=os.environ.get('DATABASE_PORT')
+# )
+
+database = 'surfe-diem-api.db'
+conn = sql.connect(database, check_same_thread=False)
 
 rss_props = {
     "location_id": "location_id",
@@ -71,15 +73,14 @@ def insert_rss(id, rss):
     if rss is None:
         logging.warning(f"No valid rss feed for {id}")
         return
-    table_name = "locations_latest_observation"
     mapped_rss = map_rss_props(rss)
     cur = conn.cursor()
     try:
-        cur.execute(sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
-            sql.Identifier(table_name),
-            sql.SQL(',').join(map(sql.Identifier, mapped_rss.keys())),
-            sql.SQL(',').join(map(sql.Placeholder, mapped_rss.keys()))
-        ), mapped_rss)
+        columns_string = ','.join(mapped_rss.keys())
+        values_string = ','.join('?' * len(mapped_rss.keys()))
+        values = tuple(mapped_rss.values())
+        cur.execute(f'''INSERT INTO locations_latest_observation({columns_string})
+            VALUES({values_string})''',values)
         conn.commit()
         logging.info(f"Successfully inserted rss for {id}")
     except Exception as e:
