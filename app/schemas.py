@@ -26,8 +26,6 @@ class BuoyLocation(BaseModel):
     url: Optional[str] = None
     active: Optional[bool] = True
     description: Optional[str]
-    depth: Optional[str]
-    elevation: Optional[str]
     location: Optional[str]
     weight: Optional[int] = 0
 
@@ -76,10 +74,10 @@ class BuoyLocationLatestObservation(BaseModel):
     id: int
     location_id: str
     date_created: datetime
-    timestamp: datetime
+    timestamp: str
     title: str
     href: str
-    published: datetime
+    published: str
     wind_speed: Optional[str]
     dominant_wave_period: Optional[str]
     dew_point: Optional[str]

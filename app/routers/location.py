@@ -29,10 +29,9 @@ def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optio
         )
 
     if search:
-        select_stmt = select_stmt.where(models.BuoyLocation.name.match(search))
+        select_stmt = select_stmt.where(models.BuoyLocation.name.like(f"%{search}%"))
     
     select_stmt = select_stmt.limit(limit)
-
     location = db.execute(select_stmt).all()
 
     locations_list = []
@@ -42,21 +41,22 @@ def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optio
 
     return locations_list
 
-@router.get("/locations/spots", response_model=List[BuoyLocationResponse])
-def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):
-    '''Get a list of saved locations'''
-    spots = db.query(
-        models.BuoyLocation, func.count(models.BuoyLocation.id)
-    ).join(
-        models.UserLocation, models.UserLocation.location_id == models.BuoyLocation.id, isouter=True
-    ).where(
-        models.UserLocation.user_id == current_user.id
-    ).group_by(
-        models.BuoyLocation.id
-    ).limit(
-        limit
-    ).all()
-    return spots
+# TODO: this is broken, fix it later. Not used anywhere yet
+# @router.get("/locations/spots", response_model=List[BuoyLocationResponse])
+# def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):
+#     '''Get a list of saved locations'''
+#     spots = db.query(
+#         models.BuoyLocation, func.count(models.BuoyLocation.id)
+#     ).join(
+#         models.UserLocation, models.UserLocation.location_id == models.BuoyLocation.id, isouter=True
+#     ).where(
+#         models.UserLocation.user_id == current_user.id
+#     ).group_by(
+#         models.BuoyLocation.id
+#     ).limit(
+#         limit
+#     ).all()
+#     return spots
 
 @router.get("/locations/spots/count")
 def count_locations(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
@@ -69,17 +69,18 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     ).count()
     return {"count": spots}
 
-@router.get("/locations/summary", response_model=List[BuoyLocationNOAASummary])
-def get_locations_summary(db: Session = Depends(get_db), limit: int = 50):
-    '''Get a list of the last n summaries'''
-    location_summary = db.query(
-        models.BuoyLocationNoaaSummary
-    ).order_by(
-        models.BuoyLocationNoaaSummary.timestamp.desc()
-    ).limit(
-        limit
-    ).all()
-    return location_summary
+# Deprecated
+# @router.get("/locations/summary", response_model=List[BuoyLocationNOAASummary])
+# def get_locations_summary(db: Session = Depends(get_db), limit: int = 50):
+#     '''Get a list of the last n summaries'''
+#     location_summary = db.query(
+#         models.BuoyLocationNoaaSummary
+#     ).order_by(
+#         models.BuoyLocationNoaaSummary.timestamp.desc()
+#     ).limit(
+#         limit
+#     ).all()
+#     return location_summary
 
 @router.get("/locations/latest-observations", response_model=List[BuoyLocationLatestObservation])
 def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
@@ -87,7 +88,7 @@ def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
     latest_observations = db.query(
         models.BuoyLocationLatestObservation
     ).order_by(
-        models.BuoyLocationLatestObservation.published.desc()
+        models.BuoyLocationLatestObservation.date_created.desc()
     ).limit(
         limit
     ).all()
@@ -137,7 +138,7 @@ def create_location(location: BuoyLocationPost, db: Session = Depends(get_db), c
     if current_user.is_admin == False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
     
-    new_location = models.BuoyLocation(creator_id=current_user.id, **location.dict())
+    new_location = models.BuoyLocation(**location.dict())
     db.add(new_location)
     try:
         db.commit()

@@ -6,3 +6,4 @@ migration_tools
 local_utils
 migrations
 *.log
+/surfe-diem-api.db

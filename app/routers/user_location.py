@@ -14,7 +14,7 @@ router = APIRouter(
 def toggle_user_location(location: UserLocation, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     '''favorite or unfavorite this user_id / location_id combo'''
     # check that location id exists first
-    location_query = db.query(models.Location).filter(models.Location.id == location.location_id)
+    location_query = db.query(models.BuoyLocation).filter(models.BuoyLocation.id == location.location_id)
     existing_location = location_query.first()
 
     if not existing_location:
