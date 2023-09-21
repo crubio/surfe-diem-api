@@ -6,7 +6,7 @@ import json
 import sqlite3 as sql
 from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 # conn = psycopg2.connect(
 #    database=os.environ.get('DATABASE_NAME'), user=os.environ.get('DATABASE_USERNAME'), password=os.environ.get('DATABASE_PASSWORD'),
@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 # SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
 
 # sqlite connection string
-database = 'surfe-diem-api.db'
+database = os.environ.get('SQLITE_DB')
 conn = sql.connect(database, check_same_thread=False)
 
 def main(json_data_file):
