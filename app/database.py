@@ -6,8 +6,7 @@ from psycopg2.extras import RealDictCursor
 from .config import settings
 
 # SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
-SQLALCHEMY_SQLITE_DATABASE_URL = "sqlite:///./surfe-diem-api.db"
-engine = create_engine(SQLALCHEMY_SQLITE_DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(settings.sqlite_uri, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

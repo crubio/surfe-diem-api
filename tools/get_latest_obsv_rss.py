@@ -16,14 +16,14 @@ local_rss = "file:///Users/crubio/Projects/surfe-diem-api/data/latest_observatio
 local_xml = "file:///Users/crubio/Projects/surfe-diem-api/data/latest_observation.xml"
 remote_url = "https://www.ndbc.noaa.gov/data/latest_obs/{id}.rss"
 
-# load_dotenv()
+load_dotenv()
 
 # conn = psycopg2.connect(
 #    database=os.environ.get('DATABASE_NAME'), user=os.environ.get('DATABASE_USERNAME'), password=os.environ.get('DATABASE_PASSWORD'),
 #    host=os.environ.get('DATABASE_HOSTNAME'), port=os.environ.get('DATABASE_PORT')
 # )
 
-database = 'surfe-diem-api.db'
+database = os.environ.get('SQLITE_DB')
 conn = sql.connect(database, check_same_thread=False)
 
 rss_props = {
