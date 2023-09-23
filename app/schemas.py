@@ -71,9 +71,7 @@ class BuoyLocationNOAASummary(BaseModel):
 
 class BuoyLocationLatestObservation(BaseModel):
     '''Summary of NOAA latest observation rss feed'''
-    id: int
     location_id: str
-    date_created: datetime
     timestamp: str
     title: str
     href: str

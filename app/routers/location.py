@@ -1,12 +1,15 @@
-from typing import List, Union, Optional
+from typing import List, Optional
+import os.path
 
 from fastapi import Depends, HTTPException, Response, status, APIRouter
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, oauth2
 from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation)
+import json
 
 router = APIRouter(
     prefix="/api/v1",
@@ -41,23 +44,6 @@ def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optio
 
     return locations_list
 
-# TODO: this is broken, fix it later. Not used anywhere yet
-# @router.get("/locations/spots", response_model=List[BuoyLocationResponse])
-# def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):
-#     '''Get a list of saved locations'''
-#     spots = db.query(
-#         models.BuoyLocation, func.count(models.BuoyLocation.id)
-#     ).join(
-#         models.UserLocation, models.UserLocation.location_id == models.BuoyLocation.id, isouter=True
-#     ).where(
-#         models.UserLocation.user_id == current_user.id
-#     ).group_by(
-#         models.BuoyLocation.id
-#     ).limit(
-#         limit
-#     ).all()
-#     return spots
-
 @router.get("/locations/spots/count")
 def count_locations(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     spots = db.query(
@@ -69,30 +55,19 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     ).count()
     return {"count": spots}
 
-# Deprecated
-# @router.get("/locations/summary", response_model=List[BuoyLocationNOAASummary])
-# def get_locations_summary(db: Session = Depends(get_db), limit: int = 50):
-#     '''Get a list of the last n summaries'''
-#     location_summary = db.query(
-#         models.BuoyLocationNoaaSummary
-#     ).order_by(
-#         models.BuoyLocationNoaaSummary.timestamp.desc()
-#     ).limit(
-#         limit
-#     ).all()
-#     return location_summary
-
+# TODO: Update this route to use the database when thats available for this data.
+# This is a temporary solution until we can get the latest observation data from NOAA in SQLite or use Postgres again
+# Contents are scraped and added to a file from tools/get_latest_obsv_rss.py
+# The file only contains the most recent observation for each location
 @router.get("/locations/latest-observations", response_model=List[BuoyLocationLatestObservation])
-def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
+def get_latest_observations():
     '''Get a list of all latest observations from NOAA rss feed'''
-    latest_observations = db.query(
-        models.BuoyLocationLatestObservation
-    ).order_by(
-        models.BuoyLocationLatestObservation.date_created.desc()
-    ).limit(
-        limit
-    ).all()
-    return latest_observations
+    file_path = 'data/latest_observation.json'
+
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No latest observation data found")
+    
+    return(FileResponse("data/latest_observation.json"))
 
 @router.get("/locations/{location_id}", response_model=BuoyLocationResponse)
 def get_location(location_id: str, db: Session = Depends(get_db)):
@@ -117,21 +92,31 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     return location_summary
 
-@router.get("/locations/{location_id}/latest-observation", response_model=List[BuoyLocationLatestObservation])
-def get_location_latest_observation(location_id: str, limit: int = 10, db: Session = Depends(get_db)):
+# TODO: Update this route to use the database when thats available for this data.
+# This is a temporary solution until we can get the latest observation data from NOAA in SQLite or use Postgres again
+# Contents are scraped and added to a file from tools/get_latest_obsv_rss.py
+# The file only contains the most recent observation for each location
+@router.get("/locations/{location_id}/latest-observation", response_model=BuoyLocationLatestObservation)
+def get_location_latest_observation(location_id: str):
     '''get latest observation for this location id'''
-    location_latest_observation = db.query(
-        models.BuoyLocationLatestObservation
-    ).filter(
-        models.BuoyLocationLatestObservation.location_id == location_id,
-    ).order_by(
-        models.BuoyLocationLatestObservation.published.desc()
-    ).limit(
-        limit
-    ).all()
-    return location_latest_observation
+    file_path = 'data/latest_observation.json'
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No latest observation data found")
+    
+    with open('data/latest_observation.json') as json_file:
+        data = json.load(json_file)
+    result = None
+    for item in data:
+        if str(item['location_id']) == location_id:
+            result = item
+            break
+    
+    if result == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} latest observations not found")
+    
+    return result
 
-# should be an admin only route - add later
+
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=BuoyLocationResponse)
 def create_location(location: BuoyLocationPost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     '''Create a location & return the new location'''
@@ -149,7 +134,6 @@ def create_location(location: BuoyLocationPost, db: Session = Depends(get_db), c
     
     return new_location
 
-# should be an admin only route - add later
 @router.delete("/locations/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_location(id: str, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     '''Delete a location'''
@@ -167,7 +151,7 @@ def delete_location(id: str, db: Session = Depends(get_db), current_user = Depen
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# should be an admin only route - add later
+
 @router.put("/locations/{id}", response_model=BuoyLocationResponse)
 def update_location(id: int, updated_location: BuoyLocationPut, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     '''update a location based on location id'''

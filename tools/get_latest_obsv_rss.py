@@ -6,6 +6,7 @@ import feedparser
 from bs4 import BeautifulSoup
 import sqlite3 as sql
 from station_ids import *
+import json
 
 '''
 Check latest observations on NOAA if we are getting errors importing data.
@@ -48,14 +49,14 @@ rss_props = {
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    logging.info("Starting get_latest_rss.py")
+    station_json = []
     for station in station_ids:
         rss = get_latest_summary(station)
         if not rss:
             continue
-        insert_rss(station, rss)
-    conn.close()
-    logging.info("Finished get_latest_rss.py")
+        station_json.append(rss)
+    write_to_file(json.dumps(station_json))
+    # insert_from_file()
     return
 
 def map_rss_props(rss):
@@ -67,6 +68,16 @@ def map_rss_props(rss):
 
 def generate_url(id):
     return remote_url.format(id=id)
+
+def write_to_file(dump):
+    with open('data/latest_observation.json', 'w') as outfile:
+        outfile.write(dump)
+
+def insert_from_file():
+    with open('data/latest_observation.json') as json_file:
+        data = json.load(json_file)
+        for row in data:
+            insert_rss(row['location_id'], row)
 
 def insert_rss(id, rss):
     logging.info(f"Running insert_rss for {id}")
