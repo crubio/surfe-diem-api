@@ -24,8 +24,8 @@ load_dotenv()
 #    host=os.environ.get('DATABASE_HOSTNAME'), port=os.environ.get('DATABASE_PORT')
 # )
 
-database = os.environ.get('SQLITE_DB')
-conn = sql.connect(database, check_same_thread=False)
+# database = os.environ.get('SQLITE_DB')
+# conn = sql.connect(database, check_same_thread=False)
 
 rss_props = {
     "location_id": "location_id",
@@ -56,7 +56,6 @@ def main():
             continue
         station_json.append(rss)
     write_to_file(json.dumps(station_json))
-    # insert_from_file()
     return
 
 def map_rss_props(rss):
@@ -73,30 +72,30 @@ def write_to_file(dump):
     with open('data/latest_observation.json', 'w') as outfile:
         outfile.write(dump)
 
-def insert_from_file():
-    with open('data/latest_observation.json') as json_file:
-        data = json.load(json_file)
-        for row in data:
-            insert_rss(row['location_id'], row)
+# def insert_from_file():
+#     with open('data/latest_observation.json') as json_file:
+#         data = json.load(json_file)
+#         for row in data:
+#             insert_rss(row['location_id'], row)
 
-def insert_rss(id, rss):
-    logging.info(f"Running insert_rss for {id}")
-    if rss is None:
-        logging.warning(f"No valid rss feed for {id}")
-        return
-    mapped_rss = map_rss_props(rss)
-    cur = conn.cursor()
-    try:
-        columns_string = ','.join(mapped_rss.keys())
-        values_string = ','.join('?' * len(mapped_rss.keys()))
-        values = tuple(mapped_rss.values())
-        cur.execute(f'''INSERT INTO locations_latest_observation({columns_string})
-            VALUES({values_string})''',values)
-        conn.commit()
-        logging.info(f"Successfully inserted rss for {id}")
-    except Exception as e:
-        logging.warning(f"Could not insert rss for {id}. error: {e}")
-        pass
+# def insert_rss(id, rss):
+#     logging.info(f"Running insert_rss for {id}")
+#     if rss is None:
+#         logging.warning(f"No valid rss feed for {id}")
+#         return
+#     mapped_rss = map_rss_props(rss)
+#     cur = conn.cursor()
+#     try:
+#         columns_string = ','.join(mapped_rss.keys())
+#         values_string = ','.join('?' * len(mapped_rss.keys()))
+#         values = tuple(mapped_rss.values())
+#         cur.execute(f'''INSERT INTO locations_latest_observation({columns_string})
+#             VALUES({values_string})''',values)
+#         conn.commit()
+#         logging.info(f"Successfully inserted rss for {id}")
+#     except Exception as e:
+#         logging.warning(f"Could not insert rss for {id}. error: {e}")
+#         pass
     
 def get_latest_summary(id):
     logging.info(f"Running latest_summary for {id}")
