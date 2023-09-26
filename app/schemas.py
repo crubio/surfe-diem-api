@@ -70,26 +70,17 @@ class BuoyLocationNOAASummary(BaseModel):
         orm_mode = True
 
 class BuoyLocationLatestObservation(BaseModel):
-    '''Summary of NOAA latest observation rss feed'''
-    id: int
-    location_id: str
-    date_created: datetime
-    timestamp: str
-    title: str
-    href: str
-    published: str
-    wind_speed: Optional[str]
-    dominant_wave_period: Optional[str]
-    dew_point: Optional[str]
+    '''Summary of NOAA latest observation txt feed'''
+    wave_height: Optional[str]
+    peak_period: Optional[str]
     water_temp: Optional[str]
-    mean_wave_direction: Optional[str]
-    wind_gust: Optional[str]
-    average_period: Optional[str]
-    location: Optional[str]
-    wind_direction: Optional[str]
-    air_temp: Optional[str]
     atmospheric_pressure: Optional[str]
-    significant_wave_height: Optional[str]
+    air_temp: Optional[str]
+    dew_point: Optional[str]
+    swell_height: Optional[str]
+    period: Optional[str]
+    direction: Optional[str]
+    wind_wave_height: Optional[str]
 
     class Config:
         orm_mode = True
