@@ -1,4 +1,5 @@
 from typing import List, Union, Optional
+import httpx
 
 from fastapi import Depends, HTTPException, Response, status, APIRouter
 from sqlalchemy import func, select
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, oauth2
 from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation)
+from ..classes import buoylatestobservation as buoy
 
 router = APIRouter(
     prefix="/api/v1",
@@ -69,7 +71,7 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
     ).count()
     return {"count": spots}
 
-# Deprecated
+# TODO: Deprecated - probably remove this
 # @router.get("/locations/summary", response_model=List[BuoyLocationNOAASummary])
 # def get_locations_summary(db: Session = Depends(get_db), limit: int = 50):
 #     '''Get a list of the last n summaries'''
@@ -82,17 +84,18 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
 #     ).all()
 #     return location_summary
 
-@router.get("/locations/latest-observations", response_model=List[BuoyLocationLatestObservation])
-def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
-    '''Get a list of all latest observations from NOAA rss feed'''
-    latest_observations = db.query(
-        models.BuoyLocationLatestObservation
-    ).order_by(
-        models.BuoyLocationLatestObservation.date_created.desc()
-    ).limit(
-        limit
-    ).all()
-    return latest_observations
+# TODO: Deprecated - refactor or remove. We only pull one latest observation per location now on demand.
+# @router.get("/locations/latest-observations", response_model=List[BuoyLocationLatestObservation])
+# def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
+#     '''Get a list of all latest observations from NOAA rss feed'''
+#     latest_observations = db.query(
+#         models.BuoyLocationLatestObservation
+#     ).order_by(
+#         models.BuoyLocationLatestObservation.date_created.desc()
+#     ).limit(
+#         limit
+#     ).all()
+#     return latest_observations
 
 @router.get("/locations/{location_id}", response_model=BuoyLocationResponse)
 def get_location(location_id: str, db: Session = Depends(get_db)):
@@ -117,19 +120,20 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     return location_summary
 
-@router.get("/locations/{location_id}/latest-observation", response_model=List[BuoyLocationLatestObservation])
-def get_location_latest_observation(location_id: str, limit: int = 10, db: Session = Depends(get_db)):
+@router.get("/locations/{location_id}/latest-observation", response_model=List[BuoyLocationLatestObservation], response_model_exclude_none=True)
+def get_location_latest_observation(location_id: str):
     '''get latest observation for this location id'''
-    location_latest_observation = db.query(
-        models.BuoyLocationLatestObservation
-    ).filter(
-        models.BuoyLocationLatestObservation.location_id == location_id,
-    ).order_by(
-        models.BuoyLocationLatestObservation.published.desc()
-    ).limit(
-        limit
-    ).all()
-    return location_latest_observation
+    buoy_data = buoy.BuoyLatestObservation(location_id)
+    
+    try:
+        r = httpx.get(buoy_data.url())
+        r.raise_for_status()
+        data = buoy_data.parse_latest_reading_data(r.text)
+        return data
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"An error occurred while requesting {exc.request.url!r}.")
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=exc.response.status_code, detail="something went wrong, please try again")
 
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=BuoyLocationResponse)
