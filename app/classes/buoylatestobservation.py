@@ -20,7 +20,6 @@ class BuoyLatestObservation():
         return self.latest_observation_url
     
     def parse_latest_reading_data(self, raw_data):
-        print('parse_latest_reading_data')
         raw_data = raw_data.split('\n')
         swell_period_read = False
         swell_direction_read = False
