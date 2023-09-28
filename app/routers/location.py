@@ -43,6 +43,30 @@ def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optio
 
     return locations_list
 
+@router.get("/locations/{location_id}", response_model=BuoyLocationResponse)
+def get_location(location_id: str, db: Session = Depends(get_db)):
+    '''Get by location_id'''
+    select_stmt = select(
+        models.BuoyLocation, models.TideStationBuoyLocation.station_id
+    ).select_from(
+        models.BuoyLocation
+    ).join(
+        models.TideStationBuoyLocation, models.BuoyLocation.location_id == models.TideStationBuoyLocation.location_id, isouter=True
+    ).where(
+        models.BuoyLocation.location_id == location_id
+    ).order_by(
+        models.BuoyLocation.weight.desc()
+    ).limit(1)
+
+    location = db.execute(select_stmt).all()
+
+    if not location:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location id {location_id} not found")
+    
+    location_result = location[0]
+    location_result[0].station_id = location_result[1]
+    return location_result[0]
+
 # TODO: this is broken, fix it later. Not used anywhere yet
 # @router.get("/locations/spots", response_model=List[BuoyLocationResponse])
 # def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):
@@ -97,15 +121,7 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
 #     ).all()
 #     return latest_observations
 
-@router.get("/locations/{location_id}", response_model=BuoyLocationResponse)
-def get_location(location_id: str, db: Session = Depends(get_db)):
-    '''Get by location_id'''
-    location = db.query(models.BuoyLocation).filter(models.BuoyLocation.location_id == location_id, models.BuoyLocation.active == True).first()
-
-    if not location:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location id {location_id} not found")
-    return location
-
+# Deprecated - use /locations/{location_id}/latest-observation instead
 @router.get("/locations/{location_id}/latest", response_model=BuoyLocationNOAASummary)
 def get_location(location_id: str, db: Session = Depends(get_db)):
     '''get latest wave summary for this location id'''

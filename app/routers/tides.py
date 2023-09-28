@@ -56,7 +56,6 @@ def get_tides(
 
     try:
         r = httpx.get(tides_url, params=params)
-        print(r.url)
         r.raise_for_status()
         return r.json()
     except httpx.RequestError as exc:
