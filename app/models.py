@@ -80,6 +80,15 @@ class TideStationBuoyLocation(Base):
     station_id = Column(String, ForeignKey("tide_stations.station_id", ondelete="CASCADE"), nullable=True)
     location_id = Column(String, ForeignKey("buoy_location.location_id", ondelete="CASCADE"), nullable=True)
 
+class SpotLocation(Base):
+    __tablename__ = "spot_location"
+    id = Column(Integer, primary_key=True, nullable=False)
+    name = Column(String, unique=True, nullable=False)
+    timezone = Column(String)
+    latitude = Column(String)
+    longitude = Column(String)
+    subregion_name = Column(String)
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, nullable=False)
