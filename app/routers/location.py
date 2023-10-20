@@ -8,12 +8,30 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, oauth2
 from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation)
-from ..classes import buoylatestobservation as buoy
+from ..classes import buoylatestobservation as buoy, buoylocation as buoy_location
 
 router = APIRouter(
     prefix="/api/v1",
     tags=["Locations"]
 )
+
+@router.get("/locations/geojson")
+def get_locations_geojson(db: Session = Depends(get_db)):
+    '''Get a list of all locations for geojson'''
+    locations = db.query(models.BuoyLocation).filter(models.BuoyLocation.active == True).all()
+    geojson_features = []
+    geojson_list = {
+        "type": "FeatureCollection",
+        "features": geojson_features
+    }
+    for row in locations:
+        feature_object = buoy_location.BuoyLocation(row).get_geojson()
+        geojson_features.append(feature_object)
+    
+    if not geojson_list["features"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no locations found")
+
+    return geojson_list
 
 @router.get("/locations", response_model=List[BuoyLocationResponse])
 def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):

@@ -85,6 +85,19 @@ class BuoyLocationLatestObservation(BaseModel):
     class Config:
         orm_mode = True
 
+# Spots
+class Spot(BaseModel):
+    '''Our base schema for spots'''
+    id: int
+    timezone: str
+    name: str
+    latitude: float
+    longitude: float
+    subregion_name: Optional[str]
+    
+    class Config:
+        orm_mode = True
+
 # Users
 class UserCreate(BaseModel):
     email: EmailStr
