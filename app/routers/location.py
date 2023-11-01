@@ -7,13 +7,54 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, oauth2
-from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation)
-from ..classes import buoylatestobservation as buoy, buoylocation as buoy_location
+from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation, SpotLocationResponse)
+from ..classes import buoylatestobservation as buoy, buoylocation as buoy_location, spotlocation as spot_location
 
 router = APIRouter(
     prefix="/api/v1",
     tags=["Locations"]
 )
+
+@router.get("/spots", response_model=List[SpotLocationResponse])
+def get_spots(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):
+    '''Returns a list of spots'''
+    select_stmt = select(
+        models.SpotLocation
+    )
+
+    if search:
+        select_stmt = select_stmt.where(models.SpotLocation.name.like(f"%{search}%"))
+    
+    select_stmt = select_stmt.limit(limit)
+
+    spots = db.execute(select_stmt).all()
+
+    if not spots:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no spots found")
+
+    spots_list = []
+    for row in spots:
+        spots_list.append(row[0])
+
+    return spots_list
+
+@router.get("/spots/geojson")
+def get_spots_geojson(db: Session = Depends(get_db)):
+    '''Get a list of all locations for geojson'''
+    locations = db.query(models.SpotLocation).all()
+    geojson_features = []
+    geojson_list = {
+        "type": "FeatureCollection",
+        "features": geojson_features
+    }
+    for row in locations:
+        feature_object = spot_location.SpotLocation(row).get_geojson()
+        geojson_features.append(feature_object)
+    
+    if not geojson_list["features"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no spots found")
+
+    return geojson_list
 
 @router.get("/locations/geojson")
 def get_locations_geojson(db: Session = Depends(get_db)):
@@ -85,23 +126,7 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
     location_result[0].station_id = location_result[1]
     return location_result[0]
 
-# TODO: this is broken, fix it later. Not used anywhere yet
-# @router.get("/locations/spots", response_model=List[BuoyLocationResponse])
-# def get_locations(db: Session = Depends(get_db), limit: int = 10, current_user: int = Depends(oauth2.get_current_user)):
-#     '''Get a list of saved locations'''
-#     spots = db.query(
-#         models.BuoyLocation, func.count(models.BuoyLocation.id)
-#     ).join(
-#         models.UserLocation, models.UserLocation.location_id == models.BuoyLocation.id, isouter=True
-#     ).where(
-#         models.UserLocation.user_id == current_user.id
-#     ).group_by(
-#         models.BuoyLocation.id
-#     ).limit(
-#         limit
-#     ).all()
-#     return spots
-
+# TODO rename this to something else - "spots" is being used for location of surf spots, not user favs
 @router.get("/locations/spots/count")
 def count_locations(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     spots = db.query(
@@ -112,32 +137,6 @@ def count_locations(db: Session = Depends(get_db), current_user: int = Depends(o
         models.UserLocation.location_id, models.UserLocation.user_id
     ).count()
     return {"count": spots}
-
-# TODO: Deprecated - probably remove this
-# @router.get("/locations/summary", response_model=List[BuoyLocationNOAASummary])
-# def get_locations_summary(db: Session = Depends(get_db), limit: int = 50):
-#     '''Get a list of the last n summaries'''
-#     location_summary = db.query(
-#         models.BuoyLocationNoaaSummary
-#     ).order_by(
-#         models.BuoyLocationNoaaSummary.timestamp.desc()
-#     ).limit(
-#         limit
-#     ).all()
-#     return location_summary
-
-# TODO: Deprecated - refactor or remove. We only pull one latest observation per location now on demand.
-# @router.get("/locations/latest-observations", response_model=List[BuoyLocationLatestObservation])
-# def get_latest_observations(db: Session = Depends(get_db), limit: int = 50):
-#     '''Get a list of all latest observations from NOAA rss feed'''
-#     latest_observations = db.query(
-#         models.BuoyLocationLatestObservation
-#     ).order_by(
-#         models.BuoyLocationLatestObservation.date_created.desc()
-#     ).limit(
-#         limit
-#     ).all()
-#     return latest_observations
 
 # Deprecated - use /locations/{location_id}/latest-observation instead
 @router.get("/locations/{location_id}/latest", response_model=BuoyLocationNOAASummary)
