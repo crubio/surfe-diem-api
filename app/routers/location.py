@@ -56,6 +56,16 @@ def get_spots_geojson(db: Session = Depends(get_db)):
 
     return geojson_list
 
+@router.get("/spots/{spot_id}", response_model=SpotLocationResponse)
+def get_spot_instance(spot_id: str, db: Session = Depends(get_db)):
+    '''Get a spot by id'''
+    spot = db.query(models.SpotLocation).filter(models.SpotLocation.id == spot_id).first()
+
+    if not spot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"spot id {spot_id} not found")
+    
+    return spot
+
 @router.get("/locations/geojson")
 def get_locations_geojson(db: Session = Depends(get_db)):
     '''Get a list of all locations for geojson'''
