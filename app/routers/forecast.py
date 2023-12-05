@@ -17,6 +17,7 @@ def get_forecast(
     daily: Union[str, None] = None,
     start_date: Union[str, None] = None,
     end_date: Union[str, None] = None,
+    forecast_days: Union[str, None] = None,
     timezone: str = "auto", 
     length_unit: str = "imperial"
     ):
@@ -35,6 +36,8 @@ def get_forecast(
         params["start_time"] = start_date
     if end_date:
         params["end_time"] = end_date
+    if forecast_days:
+        params["forecast_days"] = forecast_days
 
     try:
         r = httpx.get(forecast_url, params=params)
