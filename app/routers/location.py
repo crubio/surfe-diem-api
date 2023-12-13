@@ -15,6 +15,35 @@ router = APIRouter(
     tags=["Locations"]
 )
 
+@router.get("/search")
+def search_all(db: Session = Depends(get_db), limit: int = 100, q: Optional[str] = ""):
+    '''Search all locations & spots'''
+    buoy_statement = select(
+        models.BuoyLocation
+    ).where(
+        models.BuoyLocation.name.like(f"%{q}%")
+    ).limit(limit)
+
+    spot_statement = select(
+        models.SpotLocation
+    ).where(
+        models.SpotLocation.name.like(f"%{q}%")
+    ).limit(limit)
+
+    buoy_locations = db.execute(buoy_statement).all()
+    spot_locations = db.execute(spot_statement).all()
+
+    if not buoy_locations and not spot_locations:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no results found")
+    
+    locations_list = []
+    for row in buoy_locations:
+        locations_list.append(row[0])
+    for row in spot_locations:
+        locations_list.append(row[0])
+
+    return locations_list
+
 @router.get("/spots", response_model=List[SpotLocationResponse])
 def get_spots(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):
     '''Returns a list of spots'''
