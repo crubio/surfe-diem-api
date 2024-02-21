@@ -32,12 +32,11 @@ uvicorn main:app --reload
 Then you can use following link for documentation about the API
 
 ````
-
-http://127.0.0.1:8000/docs 
+http://127.0.0.1:8000/api/v1
 
 ````
 
-## Setting up postgres
+## Setting up postgres - DEPRECATED (DO NOT USE)
 Create a database in postgres then create a file name .env and write the following things in your file 
 
 ````
@@ -46,10 +45,31 @@ DATABASE_PORT = 5432
 DATABASE_PASSWORD = passward_that_you_set
 DATABASE_NAME = name_of_database
 DATABASE_USERNAME = User_name
-SECRET_KEY = 09d25e094faa2556c818166b7a99f6f0f4c3b88e8d3e7
+SECRET_KEY = 1234567890
 ALGORITHM = HS256
 ACCESS_TOKEN_EXPIRE_MINUTES = 60(base)
 
+````
+
+## Setting up SQLite
+Create a file name .env and write the following things in your file 
+
+````
+SECRET_KEY = 1234567890
+ALGORITHM = HS256
+ACCESS_TOKEN_EXPIRE_MINUTES = 60(base)
+DATABASE_URL=sqlite:///./surfe-diem-api.db
+DATABASE_URI=sqlite:///./surfe-diem-api.db
+SQLITE_URI=sqlite:///./surfe-diem-api.db
+SQLITE_DB=./surfe-diem-api.db
+ENVIRONMENT=development
+
+````
+
+## Seeding the database
+Run the following command in the root of the project to seed the database with some data
+````
+jobs/run_db_setup.sh
 ````
 
 You can also use docker to do this if you prefer to run postgres in a container with `docker-compose -f docker-compose.yml up`. Use `psql` to create the database specified in .env
