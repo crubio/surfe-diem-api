@@ -205,7 +205,7 @@ def get_location_latest_observation(location_id: str):
     except httpx.RequestError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"An error occurred while requesting {exc.request.url!r}.")
     except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=exc.response.status_code, detail="something went wrong, please try again")
+        raise HTTPException(status_code=exc.response.status_code, detail="Not found")
 
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=BuoyLocationResponse)

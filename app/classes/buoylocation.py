@@ -15,7 +15,7 @@ class BuoyLocation():
         if parts[3] == 'W':
             parts[2] = '-' + parts[2]
         
-        return [float(parts[0]), float(parts[2])] # [lon, lat]
+        return [float(parts[0]), float(parts[2])]
     
     def get_geojson(self):
         latlng = self.parse_location()
