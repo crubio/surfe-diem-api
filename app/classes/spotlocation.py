@@ -12,7 +12,7 @@ class SpotLocation():
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [float(self.longitude), float(self.latitude)]
+                "coordinates": [float(self.latitude), float(self.longitude)]
             },
             "properties": {
                 "id": self.id,
