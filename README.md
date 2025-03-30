@@ -18,7 +18,7 @@ Then install requirements
 
 ````
 
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 ````
 
@@ -26,6 +26,13 @@ Then go this repo folder in your local computer run follwoing command
 ````
 
 uvicorn main:app --reload
+
+````
+or you can try this command if the previous one is throwing errors
+
+````
+
+uvicorn app.main:app --host=127.0.0.1 --port=${PORT:-5000}
 
 ````
 
@@ -36,7 +43,8 @@ http://127.0.0.1:8000/api/v1
 
 ````
 
-## Setting up postgres - DEPRECATED (DO NOT USE)
+## Setting up postgres
+If you want to use postgres, the code is still in the repo. Add these to your envars file.
 Create a database in postgres then create a file name .env and write the following things in your file 
 
 ````
