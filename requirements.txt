@@ -8,7 +8,6 @@ argon2pure==1.3
 asgiref==3.8.1
 atheris==2.3.0
 Babel==2.17.0
-bcryptor==1.2.2
 Beaker==1.13.0
 BeautifulSoup==3.2.2
 bokeh==3.7.2
