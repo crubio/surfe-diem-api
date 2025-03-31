@@ -91,7 +91,7 @@ swagger-ui-bundle==0.0.9
 tomli==2.0.1
 tomlkit==0.11.8
 typing-inspection==0.4.0
-typing_extensions==4.5.0
+typing_extensions==4.13.0
 ujson==5.7.0
 urllib3==2.0.2
 uvicorn==0.22.0
