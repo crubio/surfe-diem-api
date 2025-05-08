@@ -4,7 +4,7 @@ clear
 
 echo "Running db setup job...(db_setup.py)"
 
-python3 tools/import_station_data.py data/stations_json_20230913T14.json
+python3 tools/import_station_data.py data/stations_json_20250507T11.json
 
 python3 tools/import_tide_stations.py data/tide_stations.json
 

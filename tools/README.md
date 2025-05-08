@@ -6,7 +6,7 @@ Run the following command to import data from JSON files:
 
 ```bash
 # import buoy station data
-$ python3 tools/import_station_data.py data/stations_json_20230913T14.json
+$ python3 tools/import_station_data.py data/stations_json_20250507T11.json
 
 # import tide station data
 $ python3 tools/import_tide_station_data.py data/tide_stations.json

@@ -32,7 +32,7 @@ def import_locations(json_data_file):
                 cursor.execute('''INSERT INTO buoy_location(location_id, name, url, active, description, location, weight)
                     VALUES(?,?,?,?,?,?,?)''',
                     (
-                        row['location_id'], row['name'], row['url'], True, row['description'], row['location'], row['weight']
+                        row['location_id'], row['name'], row['url'], True, row['description'], row['location'], row['weight'] or 0
                     ))
             except Exception as error:
                 print(f"Error inserting row: {error}")
