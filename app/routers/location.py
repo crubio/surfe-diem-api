@@ -4,6 +4,7 @@ import httpx
 from fastapi import Depends, HTTPException, Response, status, APIRouter
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from geopy import distance
 
 from ..database import get_db
 from .. import models, oauth2
@@ -66,6 +67,27 @@ def get_spots(db: Session = Depends(get_db), limit: int = 100, search: Optional[
         spots_list.append(row[0])
 
     return spots_list
+
+@router.get("/spots/find_closest")
+def get_closest_spot(lat: float, lng: float, dist: float = 50, db: Session = Depends(get_db)):
+    '''Get the closest surf spot to a given lat & lng'''
+    print(f"lat: {lat}, lng: {lng}, dist: {dist}")
+    spots = db.query(models.SpotLocation).all()
+    
+    if not spots:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no surf spots found")
+
+    best = []
+    for spot in spots:
+        spot_distance = distance.distance((lat, lng), (spot.latitude, spot.longitude)).miles
+        if spot_distance < dist:
+            best.append({"id": spot.id, "name": spot.name, "region": spot.subregion_name, "distance": spot_distance, "latitude": spot.latitude, "longitude": spot.longitude})
+    sorted_best = sorted(best, key=lambda k: k['distance'])
+    
+    if not sorted_best:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="surf data not available for this location")
+    
+    return sorted_best
 
 @router.get("/spots/geojson")
 def get_spots_geojson(db: Session = Depends(get_db)):
