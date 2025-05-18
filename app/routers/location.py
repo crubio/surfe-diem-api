@@ -81,7 +81,7 @@ def get_closest_spot(lat: float, lng: float, dist: float = 50, db: Session = Dep
     for spot in spots:
         spot_distance = distance.distance((lat, lng), (spot.latitude, spot.longitude)).miles
         if spot_distance < dist:
-            best.append({"id": spot.id, "name": spot.name, "region": spot.subregion_name, "distance": spot_distance, "latitude": spot.latitude, "longitude": spot.longitude})
+            best.append({"id": spot.id, "name": spot.name, "subregion_name": spot.subregion_name, "distance": spot_distance, "latitude": spot.latitude, "longitude": spot.longitude})
     sorted_best = sorted(best, key=lambda k: k['distance'])
     
     if not sorted_best:
