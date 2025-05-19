@@ -69,7 +69,7 @@ def get_spots(db: Session = Depends(get_db), limit: int = 100, search: Optional[
 
 @router.get("/spots/geojson")
 def get_spots_geojson(db: Session = Depends(get_db)):
-    '''Get a list of all locations for geojson'''
+    '''Get a list of all locations for geojson.'''
     locations = db.query(models.SpotLocation).all()
     geojson_features = []
     geojson_list = {
