@@ -91,7 +91,7 @@ def get_closest_spot(lat: float, lng: float, dist: float = 50, db: Session = Dep
 
 @router.get("/spots/geojson")
 def get_spots_geojson(db: Session = Depends(get_db)):
-    '''Get a list of all locations for geojson'''
+    '''Get a list of all locations for geojson.'''
     locations = db.query(models.SpotLocation).all()
     geojson_features = []
     geojson_list = {
