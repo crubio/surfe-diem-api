@@ -117,7 +117,7 @@ def get_spot_instance(spot_id: str, db: Session = Depends(get_db)):
     return spot
 
 @router.get("/locations/find_closest")
-def get_closest_location(lat: float, lng: float, dist: float = 50, db: Session = Depends(get_db)):
+def get_closest_location(lat: float, lng: float, limit = 3, dist: float = 100, db: Session = Depends(get_db)):
     '''Get the closest buoy location to a given lat & lng'''
     locations = db.query(models.BuoyLocation).filter(models.BuoyLocation.active == True).all()
     
@@ -126,9 +126,10 @@ def get_closest_location(lat: float, lng: float, dist: float = 50, db: Session =
         coords = buoy_location.BuoyLocation(buoy).parse_location()
         buoy_distance = distance.distance((lat, lng), (coords[0], coords[1])).miles
         if buoy_distance < dist:
-            best.append({"location_id": buoy.id, "name": buoy.name, "url": buoy.url, "description": buoy.description, "location": buoy.location, "distance": buoy_distance, "latitude": coords[0], "longitude": coords[1]})
-            sorted_best = sorted(best, key=lambda k: k['distance'])
-    
+            best.append({"location_id": buoy.location_id, "name": buoy.name, "url": buoy.url, "description": buoy.description, "location": buoy.location, "distance": buoy_distance, "latitude": coords[0], "longitude": coords[1]})
+
+    sorted_best = sorted(best, key=lambda k: k['distance'])
+    sorted_best = sorted_best[:limit]
     if not sorted_best:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="surf data not available for this location")
     
