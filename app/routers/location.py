@@ -126,7 +126,21 @@ def get_closest_location(lat: float, lng: float, limit = 3, dist: float = 100, d
         coords = buoy_location.BuoyLocation(buoy).parse_location()
         buoy_distance = distance.distance((lat, lng), (coords[0], coords[1])).miles
         if buoy_distance < dist:
-            best.append({"location_id": buoy.location_id, "name": buoy.name, "url": buoy.url, "description": buoy.description, "location": buoy.location, "distance": buoy_distance, "latitude": coords[0], "longitude": coords[1]})
+            # get latest observation for this buoy
+            latest_obs = get_latest_obvservation(buoy.location_id) or None
+            best.append(
+                {
+                    "location_id": buoy.location_id,
+                    "name": buoy.name,
+                    "url": buoy.url,
+                    "description": buoy.description,
+                    "location": buoy.location,
+                    "distance": buoy_distance,
+                    "latitude": coords[0], 
+                    "longitude": coords[1],
+                    "latest_observation": latest_obs,
+                }
+            )
 
     sorted_best = sorted(best, key=lambda k: k['distance'])
     sorted_best = sorted_best[:limit]
@@ -232,20 +246,26 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     return location_summary
 
-@router.get("/locations/{location_id}/latest-observation", response_model=List[BuoyLocationLatestObservation], response_model_exclude_none=True)
-def get_location_latest_observation(location_id: str):
-    '''get latest observation for this location id'''
+def get_latest_obvservation(location_id: str):
     buoy_data = buoy.BuoyLatestObservation(location_id)
-    
+
     try:
         r = httpx.get(buoy_data.url())
         r.raise_for_status()
-        data = buoy_data.parse_latest_reading_data(r.text)
-        return data
-    except httpx.RequestError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"An error occurred while requesting {exc.request.url!r}.")
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=exc.response.status_code, detail="Not found")
+        if r.status_code != 200:
+            return None
+    except:
+        return None
+    data = buoy_data.parse_latest_reading_data(r.text)
+    return data
+
+@router.get("/locations/{location_id}/latest-observation", response_model=List[BuoyLocationLatestObservation], response_model_exclude_none=True)
+def get_location_latest_observation(location_id: str):
+    '''get latest observation for this location id'''
+    latest_observation_data = get_latest_obvservation(location_id)
+    if not latest_observation_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
+    return latest_observation_data
 
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=BuoyLocationResponse)
