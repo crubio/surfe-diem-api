@@ -46,7 +46,7 @@ def search_all(db: Session = Depends(get_db), limit: int = 100, q: Optional[str]
     return locations_list
 
 @router.get("/spots", response_model=List[SpotLocationResponse])
-def get_spots(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):
+def get_spots(db: Session = Depends(get_db), limit: int = 500, search: Optional[str] = ""):
     '''Returns a list of spots'''
     select_stmt = select(
         models.SpotLocation
@@ -171,11 +171,9 @@ def get_locations_geojson(db: Session = Depends(get_db)):
 def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):
     filters = [models.BuoyLocation.active == True]
     select_stmt = select(
-        models.BuoyLocation, models.TideStationBuoyLocation.station_id
+        models.BuoyLocation
         ).select_from(
             models.BuoyLocation
-        ).join(
-            models.TideStationBuoyLocation, models.BuoyLocation.location_id == models.TideStationBuoyLocation.location_id, isouter=True
         ).filter(
             *filters
         ).order_by(
@@ -188,22 +186,20 @@ def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optio
     select_stmt = select_stmt.limit(limit)
     location = db.execute(select_stmt).all()
 
+    if not location:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no locations found")
     locations_list = []
     for row in location:
-        row[0].station_id = row[1]
         locations_list.append(row[0])
-
     return locations_list
 
 @router.get("/locations/{location_id}", response_model=BuoyLocationResponse)
 def get_location(location_id: str, db: Session = Depends(get_db)):
     '''Get by location_id'''
     select_stmt = select(
-        models.BuoyLocation, models.TideStationBuoyLocation.station_id
+        models.BuoyLocation
     ).select_from(
         models.BuoyLocation
-    ).join(
-        models.TideStationBuoyLocation, models.BuoyLocation.location_id == models.TideStationBuoyLocation.location_id, isouter=True
     ).where(
         models.BuoyLocation.location_id == location_id
     ).order_by(
@@ -216,7 +212,6 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location id {location_id} not found")
     
     location_result = location[0]
-    location_result[0].station_id = location_result[1]
     return location_result[0]
 
 # TODO rename this to something else - "spots" is being used for location of surf spots, not user favs

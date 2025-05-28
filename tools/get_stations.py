@@ -68,6 +68,10 @@ def get_stations():
             station_weight = 0
 
         try:
+            if not station_meta[2][0].isdigit():
+                print("Skipping station %s, invalid location: %s", id, station_meta[2])
+                continue  # skip if location is not a valid coordinate
+
             data["location_id"] = str(id)
             data["name"] = station_title
             data["url"] = f"{BUOY_URL}{id}"

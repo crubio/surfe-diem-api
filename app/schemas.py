@@ -41,7 +41,6 @@ class BuoyLocationResponse(BuoyLocationPost):
     id: int
     date_created: Optional[datetime]
     date_updated: Optional[datetime]
-    station_id: Optional[str]
     
     class Config:
         orm_mode = True
