@@ -72,6 +72,7 @@ class TideStation(Base):
     latitude = Column(String)
     longitude = Column(String)
 
+# deprecated, do not use
 class TideStationBuoyLocation(Base):
     __tablename__ = "tide_station_buoy_location"
     id = Column(Integer, primary_key=True, nullable=False)
