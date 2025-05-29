@@ -168,7 +168,7 @@ def get_locations_geojson(db: Session = Depends(get_db)):
     return geojson_list
 
 @router.get("/locations", response_model=List[BuoyLocationResponse])
-def get_locations(db: Session = Depends(get_db), limit: int = 100, search: Optional[str] = ""):
+def get_locations(db: Session = Depends(get_db), limit: int = 500, search: Optional[str] = ""):
     filters = [models.BuoyLocation.active == True]
     select_stmt = select(
         models.BuoyLocation
