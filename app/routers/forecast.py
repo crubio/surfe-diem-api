@@ -13,6 +13,7 @@ forecast_url = "https://marine-api.open-meteo.com/v1/marine"
 def get_forecast(
     latitude: float, 
     longitude: float, 
+    current: Union[str, None] = None,
     hourly: Union[str, None] = None, 
     daily: Union[str, None] = None,
     start_date: Union[str, None] = None,
@@ -28,6 +29,8 @@ def get_forecast(
         "timezone": timezone,
         "length_unit": length_unit
     }
+    if current:
+        params["current"] = current
     if hourly:
         params["hourly"] = hourly
     if daily:
