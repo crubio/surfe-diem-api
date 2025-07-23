@@ -262,6 +262,44 @@ def get_location_latest_observation(location_id: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     return latest_observation_data
 
+@router.get("/locations/{location_id}/realtime")
+def get_location(location_id: str, limit: int = 10, send_html: bool = False):
+    '''
+    get realtime from ndbc.noaa.gov/data/realtime2/{station_id}.txt
+    '''
+    base_url = "https://www.ndbc.noaa.gov/data/realtime2/"
+    url = base_url + location_id + ".txt"
+    try:
+        r = httpx.get(url)
+        r.raise_for_status()
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} invalid id")
+
+    if not r.text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
+
+    data = r.text.splitlines()
+    del data[0:2]  # remove the first two lines which are headers
+
+    buoy_real_time = buoy_location.BuoyDataBuilder().build(location_id, data)
+
+    if buoy_real_time.data.empty:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
+    
+    if send_html:
+        df_html = buoy_real_time.get_data().to_html(classes='table table-striped table-hover', index=False)
+    else:
+        df_html = None
+    
+    return {
+        "location_id": buoy_real_time.location_id,
+        "url": buoy_real_time.url,
+        "data": buoy_real_time.get_data().head(limit),
+        "html": df_html
+    }
+
 # should be an admin only route - add later
 @router.post("/locations", status_code=status.HTTP_201_CREATED, response_model=BuoyLocationResponse)
 def create_location(location: BuoyLocationPost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
