@@ -1,3 +1,45 @@
+import pandas as pd
+
+class BuoyData():
+    def __init__ (self):
+        self.location_id = None
+        self.data = None
+
+    def set_data(self, data):
+        self.data = data
+
+    def get_data(self):
+        if self.data is None:
+            self.data = pd.DataFrame()
+        return self.data
+    
+class BuoyDataBuilder():
+    def __init__(self):
+        self.base_url = 'https://www.ndbc.noaa.gov/data/realtime2/'
+        self.realtime_buoy = BuoyData()
+
+    def build(self, location_id, data):
+        self.realtime_buoy.url = self.base_url + location_id + '.txt'
+        self.realtime_buoy.location_id = location_id
+        self.realtime_buoy.set_data(self._mk_dataframe(data))
+
+        return self.realtime_buoy
+
+    def _mk_dataframe(self, data):
+        try:
+            df = pd.DataFrame([x.split() for x in data], columns=[
+                "YY", "MM", "DD", "hh", "mm", "wind_dir", "wind_speed", "gst",
+                "wave_height", "dominant_period", "avg_period", "pressure",
+                "water_temp", "air_temp", "dew_point", "visibility", "pdty", "tide", "end_of_line"
+            ])
+        except Exception as e:
+            print(f"Error creating DataFrame: {e}")
+            df = pd.DataFrame()
+
+        return df
+
+        
+
 class BuoyLocation():
     def __init__(self, buoy_location):
         self.location = buoy_location.location
