@@ -98,7 +98,7 @@ def get_spots_geojson(db: Session = Depends(get_db)):
         "features": geojson_features
     }
     for row in locations:
-        feature_object = spot_location.SpotLocation(row).get_geojson()
+        feature_object = spot_location.SpotLocation.from_obj(row).get_geojson()
         geojson_features.append(feature_object)
     
     if not geojson_list["features"]:
@@ -123,8 +123,8 @@ def get_closest_location(lat: float, lng: float, limit = 3, dist: float = 100, d
     
     best = []
     for buoy in locations:
-        coords = buoy_location.BuoyLocation(buoy).parse_location()
-        buoy_distance = distance.distance((lat, lng), (coords[0], coords[1])).miles
+        coords = buoy_location.BuoyLocation.from_obj(buoy).parse_location()
+        buoy_distance = distance.distance((lat, lng), (coords[1], coords[0])).miles
         if buoy_distance < dist:
             # get latest observation for this buoy
             latest_obs = get_latest_obvservation(buoy.location_id) or None
@@ -136,8 +136,8 @@ def get_closest_location(lat: float, lng: float, limit = 3, dist: float = 100, d
                     "description": buoy.description,
                     "location": buoy.location,
                     "distance": buoy_distance,
-                    "latitude": coords[0], 
-                    "longitude": coords[1],
+                    "latitude": coords[1], 
+                    "longitude": coords[0],
                     "latest_observation": latest_obs,
                 }
             )
@@ -159,7 +159,7 @@ def get_locations_geojson(db: Session = Depends(get_db)):
         "features": geojson_features
     }
     for row in locations:
-        feature_object = buoy_location.BuoyLocation(row).get_geojson()
+        feature_object = buoy_location.BuoyLocation.from_obj(row).get_geojson()
         geojson_features.append(feature_object)
     
     if not geojson_list["features"]:
@@ -296,7 +296,7 @@ def get_location(location_id: str, limit: int = 10, send_html: bool = False):
     return {
         "location_id": buoy_real_time.location_id,
         "url": buoy_real_time.url,
-        "data": buoy_real_time.get_data().head(limit),
+        "data": buoy_real_time.data.head(limit),
         "html": df_html
     }
 
