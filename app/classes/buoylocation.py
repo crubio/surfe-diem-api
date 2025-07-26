@@ -1,31 +1,28 @@
 import pandas as pd
+from dataclasses import dataclass
+from typing import Any
+import re
 
-class BuoyData():
-    def __init__ (self):
-        self.location_id = None
-        self.data = None
+class BuoyData:
+    def __init__(self) -> None:
+        self.location_id: str | None = None
+        self.data: pd.DataFrame | None = None
+        self.url: str | None = None
 
-    def set_data(self, data):
-        self.data = data
+class BuoyDataBuilder:
+    def __init__(self) -> None:
+        self.base_url: str = 'https://www.ndbc.noaa.gov/data/realtime2/'
 
-    def get_data(self):
-        if self.data is None:
-            self.data = pd.DataFrame()
-        return self.data
-    
-class BuoyDataBuilder():
-    def __init__(self):
-        self.base_url = 'https://www.ndbc.noaa.gov/data/realtime2/'
-        self.realtime_buoy = BuoyData()
+    def build(self, location_id: str, data: list[str]) -> BuoyData:
+        url = self.base_url + location_id + '.txt'
+        df = self._mk_dataframe(data)
+        buoy_data = BuoyData()
+        buoy_data.location_id = location_id
+        buoy_data.data = df
+        buoy_data.url = url
+        return buoy_data
 
-    def build(self, location_id, data):
-        self.realtime_buoy.url = self.base_url + location_id + '.txt'
-        self.realtime_buoy.location_id = location_id
-        self.realtime_buoy.set_data(self._mk_dataframe(data))
-
-        return self.realtime_buoy
-
-    def _mk_dataframe(self, data):
+    def _mk_dataframe(self, data: list[str]) -> pd.DataFrame:
         try:
             df = pd.DataFrame([x.split() for x in data], columns=[
                 "YY", "MM", "DD", "hh", "mm", "wind_dir", "wind_speed", "gst",
@@ -35,31 +32,48 @@ class BuoyDataBuilder():
         except Exception as e:
             print(f"Error creating DataFrame: {e}")
             df = pd.DataFrame()
-
         return df
 
         
 
-class BuoyLocation():
-    def __init__(self, buoy_location):
-        self.location = buoy_location.location
-        self.location_id = buoy_location.location_id
-        self.name = buoy_location.name
-        self.url = buoy_location.url
-        self.description = buoy_location.description
+@dataclass
+class BuoyLocation:
+    """Represents a NOAA buoy location with parsing and GeoJSON export capabilities."""
+    location: str
+    location_id: str
+    name: str
+    url: str
+    description: str
 
-    def parse_location(self):
-        location_string = self.location
-        parts = location_string.strip().split('(')[0].split(' ')
-        
-        if parts[1] == 'S':
-            parts[0] = '-' + parts[0]
-        if parts[3] == 'W':
-            parts[2] = '-' + parts[2]
-        
-        return [float(parts[0]), float(parts[2])]
-    
-    def get_geojson(self):
+    def parse_location(self) -> list[float]:
+        """
+        Parse the location string to [longitude, latitude].
+        Supports formats like '34.5 N 120.5 W', '34.5N 120.5W', etc.
+        Returns:
+            [longitude, latitude]
+        Raises:
+            ValueError: if the format is invalid.
+        """
+        pattern = r"([+-]?\d+(?:\.\d+)?)\s*([NS])[, ]+([+-]?\d+(?:\.\d+)?)\s*([EW])"
+        match = re.search(pattern, self.location.strip().replace(',', ' '))
+        if not match:
+            raise ValueError(f"Invalid location format: {self.location}")
+
+        lat, lat_dir, lon, lon_dir = match.groups()
+        lat = float(lat) * (-1 if lat_dir.upper() == 'S' else 1)
+        lon = float(lon) * (-1 if lon_dir.upper() == 'W' else 1)
+
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            raise ValueError("Latitude or longitude out of range")
+
+        return [lon, lat]  # GeoJSON: [longitude, latitude]
+
+    def get_geojson(self) -> dict:
+        """
+        Return a GeoJSON feature for this buoy location.
+        Returns:
+            dict: GeoJSON feature representation of the buoy location.
+        """
         latlng = self.parse_location()
         feature_object = {
             "type": "Feature",
@@ -76,3 +90,20 @@ class BuoyLocation():
             }
         }
         return feature_object
+
+    @classmethod
+    def from_obj(cls, buoy_location: Any) -> "BuoyLocation":
+        """
+        Instantiate a BuoyLocation from an object with matching attributes.
+        Args:
+            buoy_location (Any): An object with location, location_id, name, url, and description attributes.
+        Returns:
+            BuoyLocation: An instance of the dataclass.
+        """
+        return cls(
+            location=buoy_location.location,
+            location_id=buoy_location.location_id,
+            name=buoy_location.name,
+            url=buoy_location.url,
+            description=buoy_location.description
+        )

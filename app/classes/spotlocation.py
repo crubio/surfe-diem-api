@@ -1,18 +1,32 @@
-class SpotLocation():
-    def __init__(self, spot_location):
-        self.id = spot_location.id
-        self.name = spot_location.name
-        self.timezone = spot_location.timezone
-        self.latitude = spot_location.latitude
-        self.longitude = spot_location.longitude
-        self.subregion_name = spot_location.subregion_name
-    
-    def get_geojson(self):
-        feature_object = {
+from dataclasses import dataclass
+from typing import Any, Dict
+
+@dataclass
+class SpotLocation:
+    id: Any
+    name: str
+    timezone: str
+    latitude: float
+    longitude: float
+    subregion_name: str
+
+    @classmethod
+    def from_obj(cls, spot_location):
+        return cls(
+            id=spot_location.id,
+            name=spot_location.name,
+            timezone=spot_location.timezone,
+            latitude=spot_location.latitude,
+            longitude=spot_location.longitude,
+            subregion_name=spot_location.subregion_name
+        )
+
+    def get_geojson(self) -> Dict:
+        return {
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [float(self.latitude), float(self.longitude)]
+                "coordinates": [self.longitude, self.latitude],  # GeoJSON: [lon, lat]
             },
             "properties": {
                 "id": self.id,
@@ -21,4 +35,3 @@ class SpotLocation():
                 "subregion_name": self.subregion_name,
             }
         }
-        return feature_object
