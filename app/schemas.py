@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, conint
-from typing import Optional
+from pydantic import BaseModel, EmailStr, conint, ConfigDict
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 # Forecast
@@ -105,7 +105,8 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: EmailStr
-
+    date_created: datetime
+    
     class Config:
         orm_mode = True
 
@@ -124,4 +125,18 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[str]
+
+# Batch Forecast
+class BatchForecastRequest(BaseModel):
+    """Request model for batch forecast endpoint"""
+    model_config = ConfigDict(extra='forbid')
+    
+    buoy_ids: Optional[List[str]] = []
+    spot_ids: Optional[List[int]] = []
+
+class BatchForecastResponse(BaseModel):
+    """Response model for batch forecast endpoint"""
+    buoys: List[Dict[str, Any]]
+    spots: List[Dict[str, Any]]
+    errors: List[Dict[str, Any]]
     

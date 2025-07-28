@@ -38,6 +38,65 @@ uvicorn app.main:app --reload
 ### 5. API Docs
 Visit [http://127.0.0.1:8000/api/v1](http://127.0.0.1:8000/api/v1) for interactive docs.
 
+## 🔌 API Endpoints
+
+### Core Endpoints
+- `GET /` - Health check
+- `GET /api/v1/spots` - Get surf spots
+- `GET /api/v1/locations` - Get buoy locations
+- `GET /api/v1/forecast` - Get weather forecast
+- `GET /api/v1/weather` - Get current weather
+- `GET /api/v1/tides/find_closest` - Find nearest tide station
+
+### Batch Forecast Endpoint
+- `POST /api/v1/batch-forecast` - Batch forecast for multiple locations
+
+The batch forecast endpoint is designed for efficiency - instead of making multiple API calls from your frontend, send a list of buoy IDs and spot IDs in a single request and get current forecast data for all of them.
+
+**Request:**
+```json
+{
+  "buoy_ids": ["46042", "46232"],
+  "spot_ids": [1, 2, 3]
+}
+```
+
+**Response:**
+```json
+{
+  "buoys": [
+    {
+      "id": "46042",
+      "name": "Monterey Bay Buoy",
+      "description": "NOAA Buoy",
+      "location": "Monterey Bay, CA",
+      "url": "https://www.ndbc.noaa.gov/station_page.php?station=46042",
+      "latest_observation": {...},
+      "weather_forecast": {...}
+    }
+  ],
+  "spots": [
+    {
+      "id": 1,
+      "name": "Steamer Lane",
+      "timezone": "America/Los_Angeles",
+      "latitude": 36.9519,
+      "longitude": -122.0308,
+      "subregion_name": "Santa Cruz",
+      "weather_forecast": {...},
+      "current_weather": {...}
+    }
+  ],
+  "errors": [
+    {
+      "id": "invalid_id",
+      "type": "buoy",
+      "error": "Buoy location not found or inactive"
+    }
+  ]
+}
+```
+
 ## ⚙️ Environment Variables
 
 | Variable                     | Description                        | Example                        |
@@ -84,141 +143,128 @@ SQLITE_DB=./surfe-diem-api.db
 ENVIRONMENT=development
 ```
 
-## 🌱 Seeding the Database
-Run the following command in the root of the project to seed the database with some data:
-```bash
-jobs/run_db_setup.sh
-```
-
 ## 🐳 Docker
-To run with Docker:
+
+### Using Docker Compose
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 
-You can also use Docker to run PostgreSQL in a container with `docker-compose -f docker-compose.yml up`. Use `psql` to create the database specified in your `.env` file.
+This will start PostgreSQL and the API in containers.
+
+### Building the Docker Image
+```bash
+docker build -t surfe-diem-api .
+docker run -p 8000:8000 surfe-diem-api
+```
 
 ## 🧪 Testing
 
-This project uses [pytest](https://docs.pytest.org/) for unit and integration testing.
-
-### Test Dependencies
-- pytest
-- httpx
-- pytest-asyncio
-- fastapi
-- pandas
-- python-jose
-- passlib
-- bcrypt
-- email-validator
-- python-multipart
-- geopy
-
-Install all dependencies with:
-```bash
-pip3 install -r requirements.txt
-```
-Or, for just the test dependencies:
-```bash
-pip3 install pytest httpx pytest-asyncio fastapi pandas python-jose passlib bcrypt email-validator python-multipart geopy
-```
+### Dependencies
+The testing setup requires these additional packages (already in requirements.txt):
+- `pytest` - Testing framework
+- `httpx` - HTTP client for testing
+- `pytest-asyncio` - Async test support
 
 ### Test Structure
-- All tests are in the `tests/` directory.
-- Unit tests for classes and methods are in `tests/test_basic.py`.
-- Integration tests for API endpoints are in `tests/test_integration.py`.
+- `tests/test_basic.py` - Unit tests for core classes
+- `tests/test_integration.py` - Integration tests for API endpoints
 
 ### Running Tests
-To run all tests:
 ```bash
+# Run all tests
+python3 -m pytest
+
+# Run specific test file
+python3 -m pytest tests/test_integration.py
+
+# Run tests with verbose output
 python3 -m pytest -v
-```
-To run a specific test file:
-```bash
-python3 -m pytest tests/test_integration.py -v
+
+# Run tests matching a pattern
+python3 -m pytest -k "batch_forecast"
 ```
 
 ### Writing New Tests
-- Add new test files in the `tests/` directory.
-- Use `pytest` fixtures for shared setup.
-- Use FastAPI's `TestClient` for endpoint tests.
+1. **Unit Tests**: Test individual functions/classes in isolation
+2. **Integration Tests**: Test API endpoints with the full application stack
 
-### Example: Root Endpoint Integration Test
+Example integration test:
 ```python
-from fastapi.testclient import TestClient
-from app.main import app
-
-def test_root_endpoint():
-    client = TestClient(app)
-    response = client.get("/")
+def test_batch_forecast_endpoint_empty_request(client):
+    """Test the batch forecast endpoint with empty request."""
+    response = client.post("/api/v1/batch-forecast", json={
+        "buoy_ids": [],
+        "spot_ids": []
+    })
+    
     assert response.status_code == 200
-    assert response.json() == {"message": "hello from surfe-diem"}
+    data = response.json()
+    assert "buoys" in data
+    assert "spots" in data
+    assert "errors" in data
 ```
 
 ## 🛠️ Development
 
-### Common Commands
-- **Migrations:** `alembic upgrade head`
-- **Linting:** `flake8 app/`
-- **Formatting:** `black app/`
-- **Run with reload:** `uvicorn app.main:app --reload`
-- **Run on specific port:** `uvicorn app.main:app --host=127.0.0.1 --port=${PORT:-5000}`
-
 ### Code Style
-- Follow PEP 8 for Python code
-- Use type hints where possible
-- Add docstrings to functions and classes
+- Use type hints everywhere
+- Follow PEP 8 guidelines
+- Use dataclasses for data models
+- Add docstrings to all functions
+
+### Adding New Endpoints
+1. Create a new router in `app/routers/`
+2. Add Pydantic models for request/response validation
+3. Include the router in `app/main.py`
+4. Write integration tests
+5. Update this README
+
+### Database Migrations
+```bash
+# Create a new migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+```
 
 ## 🤝 Contributing
 
-Open an issue or pull request! All contributions are welcome.
-
-### Before Contributing
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Ensure all tests pass
+5. Run the test suite
 6. Submit a pull request
 
-## 🐞 Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-**Dependency errors:**
-```bash
-pip3 install --upgrade pip
-pip3 install -r requirements.txt
-```
-
-**Database connection issues:**
+**Database Connection Errors**
 - Check your `.env` file configuration
-- Ensure your database server is running
-- Verify database credentials
+- Ensure the database is running
+- Verify connection credentials
 
-**Port already in use:**
-```bash
-uvicorn app.main:app --port=8001
-```
+**Import Errors**
+- Make sure all dependencies are installed: `pip install -r requirements.txt`
+- Check Python path and virtual environment
 
-**Import errors:**
-- Make sure all dependencies are installed
-- Check Python version compatibility (Python 3.8+)
+**Test Failures**
+- Ensure the database is properly set up
+- Check that external APIs are accessible
+- Verify test data exists in the database
 
 ### Getting Help
-- Check the [FastAPI documentation](https://fastapi.tiangolo.com/)
-- Review existing issues in the repository
-- Open a new issue with detailed error information
+- Check the API documentation at `/api/v1`
+- Review the test files for usage examples
+- Open an issue with detailed error information
 
-## 📝 Notes
+## 📞 Contact
 
-- The SECRET_KEY in examples is just a pseudo key. You need to generate your own secure key. You can get guidance on generating a SECRET_KEY from the [FastAPI documentation](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/).
-
-## 📬 Contact
-
-For questions, open an issue or contact the maintainer.
+For questions or support, please open an issue on GitHub.
 
 ---
 
-Happy coding! 🏄‍♂️ 
+Built with ❤️ for the surfing community 
