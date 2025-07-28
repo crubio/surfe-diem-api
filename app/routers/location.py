@@ -215,16 +215,16 @@ def get_location(location_id: str, db: Session = Depends(get_db)):
     return location_result[0]
 
 # TODO rename this to something else - "spots" is being used for location of surf spots, not user favs
-@router.get("/locations/spots/count")
-def count_locations(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    spots = db.query(
-        func.count(models.UserLocation.user_id)
-    ).where(
-        models.UserLocation.user_id == current_user.id
-    ).group_by(
-        models.UserLocation.location_id, models.UserLocation.user_id
-    ).count()
-    return {"count": spots}
+# @router.get("/locations/spots/count")
+# def count_locations(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+#     spots = db.query(
+#         func.count(models.UserLocation.user_id)
+#     ).where(
+#         models.UserLocation.user_id == current_user.id
+#     ).group_by(
+#         models.UserLocation.location_id, models.UserLocation.user_id
+#     ).count()
+#     return {"count": spots}
 
 # Deprecated - use /locations/{location_id}/latest-observation instead
 @router.get("/locations/{location_id}/latest", response_model=BuoyLocationNOAASummary)

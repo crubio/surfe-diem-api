@@ -551,4 +551,152 @@ def test_weather_endpoint_ocean_coordinates(client):
         assert "detail" in data
     else:
         # Unexpected status code
-        assert False, f"Unexpected status code: {response.status_code}" 
+        assert False, f"Unexpected status code: {response.status_code}"
+
+# Batch Forecast Tests
+def test_batch_forecast_endpoint_empty_request(client):
+    """Test the batch forecast endpoint with empty request."""
+    response = client.post("/api/v1/batch-forecast", json={
+        "buoy_ids": [],
+        "spot_ids": []
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "buoys" in data
+    assert "spots" in data
+    assert "errors" in data
+    assert isinstance(data["buoys"], list)
+    assert isinstance(data["spots"], list)
+    assert isinstance(data["errors"], list)
+    assert len(data["buoys"]) == 0
+    assert len(data["spots"]) == 0
+    assert len(data["errors"]) == 0
+
+def test_batch_forecast_endpoint_buoy_only(client):
+    """Test the batch forecast endpoint with buoy IDs only."""
+    response = client.post("/api/v1/batch-forecast", json={
+        "buoy_ids": ["46042"],
+        "spot_ids": []
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "buoys" in data
+    assert "spots" in data
+    assert "errors" in data
+    
+    # Should have at least one buoy or an error
+    if len(data["buoys"]) > 0:
+        buoy = data["buoys"][0]
+        assert "id" in buoy
+        assert "name" in buoy
+        assert "description" in buoy
+        assert "location" in buoy
+        assert "url" in buoy
+        # latest_observation and weather_forecast might be None if APIs are down
+        assert "latest_observation" in buoy
+        assert "weather_forecast" in buoy
+    elif len(data["errors"]) > 0:
+        # If buoy data failed, should have error info
+        error = data["errors"][0]
+        assert "id" in error
+        assert "type" in error
+        assert "error" in error
+        assert error["type"] == "buoy"
+
+def test_batch_forecast_endpoint_spot_only(client):
+    """Test the batch forecast endpoint with spot IDs only."""
+    # First get a valid spot ID
+    spots_response = client.get("/api/v1/spots?limit=1")
+    if spots_response.status_code == 200:
+        spots_data = spots_response.json()
+        if len(spots_data) > 0:
+            spot_id = spots_data[0]["id"]
+            
+            response = client.post("/api/v1/batch-forecast", json={
+                "buoy_ids": [],
+                "spot_ids": [spot_id]
+            })
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert "buoys" in data
+            assert "spots" in data
+            assert "errors" in data
+            
+            # Should have at least one spot or an error
+            if len(data["spots"]) > 0:
+                spot = data["spots"][0]
+                assert "id" in spot
+                assert "name" in spot
+                assert "timezone" in spot
+                assert "latitude" in spot
+                assert "longitude" in spot
+                assert "subregion_name" in spot
+                # weather_forecast and current_weather might be None if APIs are down
+                assert "weather_forecast" in spot
+                assert "current_weather" in spot
+            elif len(data["errors"]) > 0:
+                # If spot data failed, should have error info
+                error = data["errors"][0]
+                assert "id" in error
+                assert "type" in error
+                assert "error" in error
+                assert error["type"] == "spot"
+
+def test_batch_forecast_endpoint_mixed_request(client):
+    """Test the batch forecast endpoint with both buoy and spot IDs."""
+    # First get a valid spot ID
+    spots_response = client.get("/api/v1/spots?limit=1")
+    if spots_response.status_code == 200:
+        spots_data = spots_response.json()
+        if len(spots_data) > 0:
+            spot_id = spots_data[0]["id"]
+            
+            response = client.post("/api/v1/batch-forecast", json={
+                "buoy_ids": ["46042"],
+                "spot_ids": [spot_id]
+            })
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert "buoys" in data
+            assert "spots" in data
+            assert "errors" in data
+            
+            # Should have some data or errors
+            total_items = len(data["buoys"]) + len(data["spots"]) + len(data["errors"])
+            assert total_items > 0, "Should have at least some data or errors"
+
+def test_batch_forecast_endpoint_invalid_ids(client):
+    """Test the batch forecast endpoint with invalid IDs."""
+    response = client.post("/api/v1/batch-forecast", json={
+        "buoy_ids": ["invalid_buoy_id"],
+        "spot_ids": [99999]
+    })
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert "buoys" in data
+    assert "spots" in data
+    assert "errors" in data
+    
+    # Should have errors for invalid IDs
+    assert len(data["errors"]) >= 2
+    
+    # Check error structure
+    for error in data["errors"]:
+        assert "id" in error
+        assert "type" in error
+        assert "error" in error
+        assert error["type"] in ["buoy", "spot"]
+
+def test_batch_forecast_endpoint_malformed_request(client):
+    """Test the batch forecast endpoint with malformed request."""
+    response = client.post("/api/v1/batch-forecast", json={
+        "invalid_field": "test"
+    })
+    
+    # Should return 422 validation error
+    assert response.status_code == 422 
