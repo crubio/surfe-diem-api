@@ -245,16 +245,22 @@ def get_latest_obvservation(location_id: str):
     buoy_data = buoy.BuoyLatestObservation(location_id)
 
     try:
-        r = httpx.get(buoy_data.url())
+        r = httpx.get(buoy_data.url(), timeout=5.0)
         r.raise_for_status()
         if r.status_code != 200:
             return None
-    except:
+    except Exception as e:
+        print(f"Error fetching data for {location_id}: {str(e)}")
         return None
-    data = buoy_data.parse_latest_reading_data(r.text)
-    return data
+    
+    try:
+        data = buoy_data.parse_latest_reading_data(r.text)
+        return data
+    except Exception as e:
+        print(f"Error parsing data for {location_id}: {str(e)}")
+        return None
 
-@router.get("/locations/{location_id}/latest-observation", response_model=List[BuoyLocationLatestObservation], response_model_exclude_none=True)
+@router.get("/locations/{location_id}/latest-observation", response_model_exclude_none=True)
 def get_location_latest_observation(location_id: str):
     '''get latest observation for this location id'''
     latest_observation_data = get_latest_obvservation(location_id)

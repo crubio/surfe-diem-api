@@ -176,8 +176,7 @@ async def get_batch_forecast(
                 # Create tasks for concurrent execution
                 spot_tasks.append((
                     spot_id,
-                    get_weather_forecast_async(float(spot.latitude), float(spot.longitude)),
-                    get_current_weather_async(float(spot.latitude), float(spot.longitude))
+                    get_weather_forecast_async(float(spot.latitude), float(spot.longitude))
                 ))
                 
             except Exception as e:
@@ -190,13 +189,12 @@ async def get_batch_forecast(
         # Execute all spot API calls concurrently
         if spot_tasks:
             spot_results = await asyncio.gather(
-                *[asyncio.gather(weather_task, current_task, return_exceptions=True) 
-                  for _, weather_task, current_task in spot_tasks],
+                *[weather_task for _, weather_task in spot_tasks],
                 return_exceptions=True
             )
             
             # Process results
-            for i, (spot_id, _, _) in enumerate(spot_tasks):
+            for i, (spot_id, _) in enumerate(spot_tasks):
                 if isinstance(spot_results[i], Exception):
                     errors.append({
                         "id": spot_id,
@@ -205,13 +203,12 @@ async def get_batch_forecast(
                     })
                     continue
                 
-                weather_forecast, current_weather = spot_results[i]
+                weather_forecast = spot_results[i]
+                current_weather = None  # No longer fetching current weather
                 
                 # Handle exceptions from individual tasks
                 if isinstance(weather_forecast, Exception):
                     weather_forecast = None
-                if isinstance(current_weather, Exception):
-                    current_weather = None
                 
                 # Extract only essential weather data
                 essential_weather = extract_essential_weather(weather_forecast, current_weather)
@@ -267,7 +264,7 @@ def extract_essential_weather(weather_forecast: Optional[Dict], current_weather:
                     }
                     break
     
-    # Extract wind data from weather forecast
+    # Extract wind data from weather forecast (if available)
     if weather_forecast and "current" in weather_forecast:
         current = weather_forecast["current"]
         if "wind_speed_10m" in current and "wind_direction_10m" in current:
@@ -317,10 +314,8 @@ async def get_weather_forecast_async(lat: float, lng: float) -> Optional[Dict[st
         params = {
             "latitude": lat,
             "longitude": lng,
-            "current": "wind_speed_10m,wind_direction_10m",
             "hourly": "wave_height,wave_direction,wave_period",
-            "timezone": "auto",
-            "length_unit": "imperial"
+            "timezone": "auto"
         }
         
         async with httpx.AsyncClient() as client:

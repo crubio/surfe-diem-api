@@ -146,17 +146,15 @@ class TestBatchForecastEndpoint:
             assert weather["wind"]["speed"] == 15.5
     
     def test_batch_forecast_success_spots_only(self, mock_db_session, sample_spot_locations,
-                                             mock_weather_data, mock_current_weather_data):
+                                             mock_weather_data):
         """Test successful batch forecast with spots only."""
         # Mock database query
         mock_db_session.query.return_value.filter.return_value.all.return_value = sample_spot_locations
         
-        # Mock external API calls
-        with patch('app.routers.batch.get_weather_forecast_async', new_callable=AsyncMock) as mock_weather, \
-             patch('app.routers.batch.get_current_weather_async', new_callable=AsyncMock) as mock_current:
+        # Mock external API calls (spots only fetch weather forecast now)
+        with patch('app.routers.batch.get_weather_forecast_async', new_callable=AsyncMock) as mock_weather:
             
             mock_weather.return_value = mock_weather_data
-            mock_current.return_value = mock_current_weather_data
             
             # Make request
             response = client.post(
@@ -178,16 +176,17 @@ class TestBatchForecastEndpoint:
             assert "name" in spot
             assert "weather" in spot
             
-            # Check weather data structure
+            # Check weather data structure (spots only get swell data now)
             weather = spot["weather"]
             assert "swell" in weather
             assert "wind" in weather
             assert "current" in weather
-            assert weather["current"]["temperature"] == "68"
+            # Current weather is now None since we simplified the requests
+            assert weather["current"] is None
     
     def test_batch_forecast_mixed_request(self, mock_db_session, sample_buoy_locations, 
                                         sample_spot_locations, mock_weather_data, 
-                                        mock_current_weather_data, mock_buoy_observation_data):
+                                        mock_buoy_observation_data):
         """Test successful batch forecast with both buoys and spots."""
         # Mock database queries - need to handle both buoy and spot queries
         def mock_query_side_effect():
@@ -200,14 +199,12 @@ class TestBatchForecastEndpoint:
         
         mock_db_session.query.side_effect = mock_query_side_effect
         
-        # Mock external API calls
+        # Mock external API calls (spots only fetch weather forecast now)
         with patch('app.routers.batch.get_latest_observation_async', new_callable=AsyncMock) as mock_obs, \
-             patch('app.routers.batch.get_weather_forecast_async', new_callable=AsyncMock) as mock_weather, \
-             patch('app.routers.batch.get_current_weather_async', new_callable=AsyncMock) as mock_current:
+             patch('app.routers.batch.get_weather_forecast_async', new_callable=AsyncMock) as mock_weather:
             
             mock_obs.return_value = mock_buoy_observation_data
             mock_weather.return_value = mock_weather_data
-            mock_current.return_value = mock_current_weather_data
             
             # Make request
             response = client.post(
