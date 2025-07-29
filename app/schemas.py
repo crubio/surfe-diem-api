@@ -85,6 +85,14 @@ class BuoyLocationLatestObservation(BaseModel):
         orm_mode = True
 
 # Spots
+class SpotLocationPost(BaseModel):
+    '''Schema for creating a new surf spot'''
+    name: str
+    timezone: str
+    latitude: float
+    longitude: float
+    subregion_name: str
+
 class SpotLocationResponse(BaseModel):
     '''Our base schema for surf spots'''
     id: int

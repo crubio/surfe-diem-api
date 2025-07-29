@@ -43,6 +43,7 @@ Visit [http://127.0.0.1:5000/api/v1](http://127.0.0.1:5000/api/v1) for interacti
 ### Core Endpoints
 - `GET /` - Health check
 - `GET /api/v1/spots` - Get surf spots
+- `POST /api/v1/spots` - Create new surf spot (admin only)
 - `GET /api/v1/locations` - Get buoy locations
 - `GET /api/v1/forecast` - Get weather forecast
 - `GET /api/v1/weather` - Get current weather
