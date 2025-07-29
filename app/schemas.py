@@ -93,6 +93,7 @@ class SpotLocationResponse(BaseModel):
     latitude: float
     longitude: float
     subregion_name: str
+    slug: Optional[str] = None
     
     class Config:
         orm_mode = True

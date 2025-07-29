@@ -87,6 +87,7 @@ class SpotLocation(Base):
     latitude = Column(String)
     longitude = Column(String)
     subregion_name = Column(String)
+    slug = Column(String, unique=True, nullable=False)
 
 class User(Base):
     __tablename__ = "users"
