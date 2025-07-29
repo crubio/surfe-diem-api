@@ -145,11 +145,14 @@ ENVIRONMENT=development
 
 ## 🚀 Deployment
 
-### Render (Production)
-The API is deployed on Render with automatic deployments from GitHub:
-1. Push changes to the main branch
-2. Render automatically deploys the updated code
-3. The API runs on port 5000 as configured in the Procfile
+### Production Deployment
+The API can be deployed to any cloud platform that supports Python applications:
+- **Heroku**: Uses the included Procfile
+- **Render**: Supports automatic deployments from GitHub
+- **Railway**: Compatible with Python web services
+- **Docker**: Containerized deployment option
+
+The API runs on port 5000 by default, but can be configured via the `PORT` environment variable.
 
 ### Docker
 
@@ -241,7 +244,7 @@ alembic upgrade head
 The production database is backed up as `surfe-diem-api.db.backup`. To update the production database:
 1. Create a new backup of your local database
 2. Commit the backup file to GitHub
-3. Deploy the updated code to Render
+3. Deploy the updated code to your hosting platform
 
 ## 🤝 Contributing
 
