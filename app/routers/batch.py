@@ -217,6 +217,7 @@ async def get_batch_forecast(
                 spot_data = {
                     "id": spot_id,
                     "name": spot.name,
+                    "slug": spot.slug,
                     "weather": essential_weather
                 }
                 

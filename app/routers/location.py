@@ -108,11 +108,26 @@ def get_spots_geojson(db: Session = Depends(get_db)):
 
 @router.get("/spots/{spot_id}", response_model=SpotLocationResponse)
 def get_spot_instance(spot_id: str, db: Session = Depends(get_db)):
-    '''Get a spot by id'''
-    spot = db.query(models.SpotLocation).filter(models.SpotLocation.id == spot_id).first()
+    '''Get a spot by id or slug'''
+    # Try to find by ID first (numeric)
+    if spot_id.isdigit():
+        spot = db.query(models.SpotLocation).filter(models.SpotLocation.id == int(spot_id)).first()
+    else:
+        # If not numeric, try to find by slug
+        spot = db.query(models.SpotLocation).filter(models.SpotLocation.slug == spot_id).first()
 
     if not spot:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"spot id {spot_id} not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"spot {spot_id} not found")
+    
+    return spot
+
+@router.get("/spots/slug/{slug}", response_model=SpotLocationResponse)
+def get_spot_by_slug(slug: str, db: Session = Depends(get_db)):
+    '''Get a spot by slug explicitly'''
+    spot = db.query(models.SpotLocation).filter(models.SpotLocation.slug == slug).first()
+
+    if not spot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"spot with slug '{slug}' not found")
     
     return spot
 

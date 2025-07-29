@@ -32,11 +32,11 @@ pip3 install -r requirements.txt
 
 ### 4. Run the API
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --host=0.0.0.0 --port=5000 --reload
 ```
 
 ### 5. API Docs
-Visit [http://127.0.0.1:8000/api/v1](http://127.0.0.1:8000/api/v1) for interactive docs.
+Visit [http://127.0.0.1:5000/api/v1](http://127.0.0.1:5000/api/v1) for interactive docs.
 
 ## 🔌 API Endpoints
 
@@ -143,19 +143,30 @@ SQLITE_DB=./surfe-diem-api.db
 ENVIRONMENT=development
 ```
 
-## 🐳 Docker
+## 🚀 Deployment
 
-### Using Docker Compose
+### Production Deployment
+The API can be deployed to any cloud platform that supports Python applications:
+- **Heroku**: Uses the included Procfile
+- **Render**: Supports automatic deployments from GitHub
+- **Railway**: Compatible with Python web services
+- **Docker**: Containerized deployment option
+
+The API runs on port 5000 by default, but can be configured via the `PORT` environment variable.
+
+### Docker
+
+#### Using Docker Compose
 ```bash
 docker-compose up -d
 ```
 
 This will start PostgreSQL and the API in containers.
 
-### Building the Docker Image
+#### Building the Docker Image
 ```bash
 docker build -t surfe-diem-api .
-docker run -p 8000:8000 surfe-diem-api
+docker run -p 5000:8000 surfe-diem-api
 ```
 
 ## 🧪 Testing
@@ -228,6 +239,12 @@ alembic revision --autogenerate -m "description"
 # Apply migrations
 alembic upgrade head
 ```
+
+### Database Backup
+The production database is backed up as `surfe-diem-api.db.backup`. To update the production database:
+1. Create a new backup of your local database
+2. Commit the backup file to GitHub
+3. Deploy the updated code to your hosting platform
 
 ## 🤝 Contributing
 
