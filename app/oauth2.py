@@ -8,7 +8,7 @@ from .config import settings
 
 from . import schemas, database, models
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
 
 # SECRET_KEY
 # algorithm
@@ -31,11 +31,11 @@ def verify_access_token(token: str, creditials_exception):
     '''verify the token is valid'''
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        id = payload.get("user_id")
+        user_id = payload.get("user_id")
 
-        if id is None:
+        if user_id is None:
             raise creditials_exception
-        token_data = schemas.TokenData(id=id)
+        token_data = schemas.TokenData(id=str(user_id))
     except JWTError:
         raise creditials_exception
 
