@@ -1,14 +1,16 @@
 from typing import List, Union, Optional
 import httpx
+import re
 
 from fastapi import Depends, HTTPException, Response, status, APIRouter
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from geopy import distance
+from unidecode import unidecode
 
 from ..database import get_db
 from .. import models, oauth2
-from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation, SpotLocationResponse)
+from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation, SpotLocationResponse, SpotLocationPost)
 from ..classes import buoylatestobservation as buoy, buoylocation as buoy_location, spotlocation as spot_location
 
 router = APIRouter(
@@ -130,6 +132,55 @@ def get_spot_by_slug(slug: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"spot with slug '{slug}' not found")
     
     return spot
+
+def generate_slug(name: str) -> str:
+    """Generate a URL-friendly slug from spot name."""
+    slug = unidecode(name).lower()
+    slug = re.sub(r'[^a-zA-Z0-9]+', '-', slug)
+    slug = re.sub(r'^[-]+|[-]+$', '', slug)  # Remove leading/trailing hyphens
+    slug = re.sub(r'[-]{2,}', '-', slug)     # Remove consecutive hyphens
+    return slug
+
+def generate_unique_slug(name: str, db: Session) -> str:
+    """Generate a unique slug, adding numbers if needed to avoid conflicts."""
+    base_slug = generate_slug(name)
+    slug = base_slug
+    counter = 1
+    
+    while db.query(models.SpotLocation).filter(models.SpotLocation.slug == slug).first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+    
+    return slug
+
+@router.post("/spots", status_code=status.HTTP_201_CREATED, response_model=SpotLocationResponse)
+def create_spot(spot: SpotLocationPost, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    '''Create a new surf spot with automatic slug generation'''
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    
+    # Generate unique slug
+    slug = generate_unique_slug(spot.name, db)
+    
+    # Create new spot with slug
+    new_spot = models.SpotLocation(
+        name=spot.name,
+        timezone=spot.timezone,
+        latitude=spot.latitude,
+        longitude=spot.longitude,
+        subregion_name=spot.subregion_name,
+        slug=slug
+    )
+    
+    db.add(new_spot)
+    try:
+        db.commit()
+        db.refresh(new_spot)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to create spot: {str(e)}")
+    
+    return new_spot
 
 @router.get("/locations/find_closest")
 def get_closest_location(lat: float, lng: float, limit = 3, dist: float = 100, db: Session = Depends(get_db)):
