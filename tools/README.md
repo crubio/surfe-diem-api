@@ -21,7 +21,7 @@ Batch add NOAA buoy locations by scraping metadata from NDBC station pages and c
    ENVIRONMENT=local
    
    # For production
-   PRODUCTION_URL=https://api.surfe-diem.com
+   PRODUCTION_URL=your_production_api_url
    ADMIN_TOKEN=your_jwt_admin_token
    ENVIRONMENT=production
    ```
@@ -39,7 +39,7 @@ Batch add NOAA buoy locations by scraping metadata from NDBC station pages and c
      -d "username=admin@example.com&password=yourpassword"
    
    # For production
-   curl -X POST "https://api.surfe-diem.com/api/v1/login" \
+   curl -X POST "your_production_api_url/api/v1/login" \
      -H "Content-Type: application/x-www-form-urlencoded" \
      -d "username=admin@example.com&password=yourpassword"
    ```
