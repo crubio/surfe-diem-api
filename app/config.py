@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     database_password: Optional[str] = ""
     database_name: Optional[str] = "test_db"
     database_username: Optional[str] = "test_user"
-    secret_key: Optional[str] = "test_secret_key"
+    secret_key: Optional[str] = ""
     algorithm: Optional[str] = "HS256"
     access_token_expire_minutes: Optional[int] = 30
     sqlite_uri: Optional[str] = "sqlite:///./test.db"

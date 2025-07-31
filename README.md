@@ -123,10 +123,10 @@ Create a database in PostgreSQL, then create a `.env` file with:
 ```bash
 DATABASE_HOSTNAME=localhost
 DATABASE_PORT=5432
-DATABASE_PASSWORD=password_that_you_set
-DATABASE_NAME=name_of_database
-DATABASE_USERNAME=User_name
-SECRET_KEY=1234567890
+DATABASE_PASSWORD=your_secure_password
+DATABASE_NAME=your_database_name
+DATABASE_USERNAME=your_username
+SECRET_KEY=your_secure_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
@@ -134,7 +134,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ### SQLite (Recommended for Development)
 Create a `.env` file with:
 ```bash
-SECRET_KEY=1234567890
+SECRET_KEY=your_secure_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 DATABASE_URL=sqlite:///./surfe-diem-api.db

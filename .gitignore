@@ -1,6 +1,8 @@
 __pycache__
 venv/
 .env
+*.db
+*.db.backup
 assets
 migration_tools
 local_utils
