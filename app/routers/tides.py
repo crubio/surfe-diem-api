@@ -182,3 +182,55 @@ def get_tides(
             detail=f"NOAA API error: {exc.response.reason_phrase}"
         )
     
+@router.get("/tides/stations")
+def get_all_tide_stations(
+    limit: int = 100, 
+    offset: int = 0, 
+    db: Session = Depends(get_db)
+):
+    '''Get all tide stations with metadata for admin panel auditing'''
+    stations = db.query(models.TideStation).offset(offset).limit(limit).all()
+    
+    if not stations:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="No tide stations found in database"
+        )
+    
+    return {
+        "stations": [
+            {
+                "id": station.id,
+                "station_id": station.station_id,
+                "station_name": station.station_name,
+                "latitude": station.latitude,
+                "longitude": station.longitude
+            }
+            for station in stations
+        ],
+        "total": len(stations),
+        "limit": limit,
+        "offset": offset
+    }
+
+@router.get("/tides/stations/{station_id}")
+def get_tide_station_by_id(station_id: str, db: Session = Depends(get_db)):
+    '''Get a specific tide station by station_id'''
+    station = db.query(models.TideStation).filter(
+        models.TideStation.station_id == station_id
+    ).first()
+    
+    if not station:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"Tide station {station_id} not found"
+        )
+    
+    return {
+        "id": station.id,
+        "station_id": station.station_id,
+        "station_name": station.station_name,
+        "latitude": station.latitude,
+        "longitude": station.longitude
+    }
+    
