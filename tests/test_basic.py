@@ -193,3 +193,125 @@ def test_tides_find_closest_out_of_range():
         
         assert response.status_code == 404
         assert "tide data not available" in response.json()["detail"] 
+
+def test_tides_stations_endpoint_success():
+    """Test successful get all tide stations endpoint call."""
+    with patch('app.routers.tides.get_db') as mock_get_db:
+        # Mock database session with sample tide stations
+        mock_db = Mock()
+        mock_stations = [
+            Mock(
+                id=1,
+                station_id="9414290",
+                station_name="San Diego, CA",
+                latitude="32.7157",
+                longitude="-117.1617"
+            ),
+            Mock(
+                id=2,
+                station_id="9410230",
+                station_name="La Jolla, CA",
+                latitude="32.8669",
+                longitude="-117.2567"
+            )
+        ]
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_stations
+        mock_get_db.return_value = mock_db
+        
+        client = TestClient(app)
+        response = client.get("/tides/stations?limit=10&offset=0")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "stations" in data
+        assert len(data["stations"]) == 2
+        assert data["total"] == 2
+        assert data["limit"] == 10
+        assert data["offset"] == 0
+        
+        # Check first station data
+        first_station = data["stations"][0]
+        assert first_station["station_id"] == "9414290"
+        assert first_station["station_name"] == "San Diego, CA"
+        assert first_station["latitude"] == "32.7157"
+        assert first_station["longitude"] == "-117.1617"
+
+def test_tides_stations_endpoint_no_stations():
+    """Test get all tide stations when no stations exist."""
+    with patch('app.routers.tides.get_db') as mock_get_db:
+        # Mock empty database
+        mock_db = Mock()
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = []
+        mock_get_db.return_value = mock_db
+        
+        client = TestClient(app)
+        response = client.get("/tides/stations")
+        
+        assert response.status_code == 404
+        assert "No tide stations found" in response.json()["detail"]
+
+def test_tides_stations_endpoint_pagination():
+    """Test tide stations endpoint pagination."""
+    with patch('app.routers.tides.get_db') as mock_get_db:
+        # Mock database session with pagination
+        mock_db = Mock()
+        mock_stations = [
+            Mock(
+                id=3,
+                station_id="9410660",
+                station_name="Los Angeles, CA",
+                latitude="33.7203",
+                longitude="-118.2728"
+            )
+        ]
+        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_stations
+        mock_get_db.return_value = mock_db
+        
+        client = TestClient(app)
+        response = client.get("/tides/stations?limit=1&offset=2")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["stations"]) == 1
+        assert data["limit"] == 1
+        assert data["offset"] == 2
+        assert data["stations"][0]["station_id"] == "9410660"
+
+def test_tides_station_by_id_endpoint_success():
+    """Test successful get tide station by ID endpoint call."""
+    with patch('app.routers.tides.get_db') as mock_get_db:
+        # Mock database session with specific station
+        mock_db = Mock()
+        mock_station = Mock(
+            id=1,
+            station_id="9414290",
+            station_name="San Diego, CA",
+            latitude="32.7157",
+            longitude="-117.1617"
+        )
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_station
+        mock_get_db.return_value = mock_db
+        
+        client = TestClient(app)
+        response = client.get("/tides/stations/9414290")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["station_id"] == "9414290"
+        assert data["station_name"] == "San Diego, CA"
+        assert data["latitude"] == "32.7157"
+        assert data["longitude"] == "-117.1617"
+
+def test_tides_station_by_id_endpoint_not_found():
+    """Test get tide station by ID when station doesn't exist."""
+    with patch('app.routers.tides.get_db') as mock_get_db:
+        # Mock database session with no station found
+        mock_db = Mock()
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+        mock_get_db.return_value = mock_db
+        
+        client = TestClient(app)
+        response = client.get("/tides/stations/nonexistent")
+        
+        assert response.status_code == 404
+        assert "Tide station nonexistent not found" in response.json()["detail"] 
