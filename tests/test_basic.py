@@ -87,7 +87,7 @@ def test_tides_current_endpoint_success():
         mock_get.return_value = mock_response
         
         client = TestClient(app)
-        response = client.get("/tides/current?station=9414290&date=today")
+        response = client.get("/tides/current?station=9414290")
         
         assert response.status_code == 200
         assert "predictions" in response.json()
@@ -96,7 +96,8 @@ def test_tides_current_endpoint_success():
         mock_get.assert_called_once()
         call_args = mock_get.call_args
         assert "station=9414290" in str(call_args)
-        assert "date=today" in str(call_args)
+        assert "date=latest" in str(call_args)  # New default
+        assert "interval=hour" in str(call_args)  # New parameter
 
 def test_tides_current_endpoint_missing_station():
     """Test tides current endpoint with missing required station parameter."""
@@ -115,7 +116,7 @@ def test_tides_current_endpoint_http_error():
         response = client.get("/tides/current?station=9414290")
         
         assert response.status_code == 400
-        assert "error occurred" in response.json()["detail"]
+        assert "Failed to connect to NOAA API" in response.json()["detail"]
 
 def test_tides_endpoint_with_date_range():
     """Test tides endpoint with begin_date and end_date parameters."""
