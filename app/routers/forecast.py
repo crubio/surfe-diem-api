@@ -19,14 +19,13 @@ def get_forecast(
     start_date: Union[str, None] = None,
     end_date: Union[str, None] = None,
     forecast_days: Union[str, None] = None,
-    timezone: str = "auto", 
+    # timezone: str = "auto", 
     length_unit: str = "imperial"
     ):
     '''Get a current forecast for a given location'''
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "timezone": timezone,
         "length_unit": length_unit
     }
     if current:

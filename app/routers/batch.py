@@ -137,7 +137,7 @@ async def get_batch_forecast(
                     "id": buoy_id,
                     "name": buoy_location.name,
                     "observation": latest_obs,
-                    "weather": extract_essential_weather(weather_forecast, None)
+                    "weather": extract_essential_weather(weather_forecast)
                 }
                 
                 buoys_data.append(buoy_data)
@@ -204,14 +204,13 @@ async def get_batch_forecast(
                     continue
                 
                 weather_forecast = spot_results[i]
-                current_weather = None  # No longer fetching current weather
                 
                 # Handle exceptions from individual tasks
                 if isinstance(weather_forecast, Exception):
                     weather_forecast = None
                 
                 # Extract only essential weather data
-                essential_weather = extract_essential_weather(weather_forecast, current_weather)
+                essential_weather = extract_essential_weather(weather_forecast)
                 
                 spot = spots[spot_id]
                 spot_data = {
@@ -243,44 +242,24 @@ async def clear_cache():
     weather_cache.clear()
     return {"message": "Cache cleared"}
 
-def extract_essential_weather(weather_forecast: Optional[Dict], current_weather: Optional[Dict]) -> Dict[str, Any]:
+def extract_essential_weather(weather_forecast: Optional[Dict]) -> Dict[str, Any]:
     """Extract only essential weather data for spots"""
+    # just return the swell data for now
     essential = {
         "swell": None,
         "wind": None,
         "current": None
     }
     
-    # Extract swell data from weather forecast
-    if weather_forecast and "hourly" in weather_forecast:
-        hourly = weather_forecast["hourly"]
-        if "wave_height" in hourly and "wave_direction" in hourly and "wave_period" in hourly:
-            # Get the first available data point
-            for i in range(len(hourly["wave_height"])):
-                if hourly["wave_height"][i] is not None:
-                    essential["swell"] = {
-                        "height": hourly["wave_height"][i],
-                        "direction": hourly["wave_direction"][i],
-                        "period": hourly["wave_period"][i]
-                    }
-                    break
-    
-    # Extract wind data from weather forecast (if available)
+    # Extract swell data from weather forecast (if available)
     if weather_forecast and "current" in weather_forecast:
         current = weather_forecast["current"]
-        if "wind_speed_10m" in current and "wind_direction_10m" in current:
-            essential["wind"] = {
-                "speed": current["wind_speed_10m"],
-                "direction": current["wind_direction_10m"]
+        if "swell_wave_height" in current and "swell_wave_direction" in current and "swell_wave_period" in current:
+            essential["swell"] = {
+                "height": current["swell_wave_height"],
+                "direction": current["swell_wave_direction"],
+                "period": current["swell_wave_period"]
             }
-    
-    # Extract current conditions from NOAA weather
-    if current_weather and "currentobservation" in current_weather:
-        obs = current_weather["currentobservation"]
-        essential["current"] = {
-            "temperature": obs.get("Temp", None),
-            "conditions": obs.get("Weather", None)
-        }
     
     return essential
 
@@ -315,8 +294,8 @@ async def get_weather_forecast_async(lat: float, lng: float) -> Optional[Dict[st
         params = {
             "latitude": lat,
             "longitude": lng,
-            "hourly": "wave_height,wave_direction,wave_period",
-            "timezone": "auto"
+            "current": "swell_wave_direction,swell_wave_height,swell_wave_period",
+            "length_unit": "imperial"
         }
         
         async with httpx.AsyncClient() as client:
@@ -329,30 +308,3 @@ async def get_weather_forecast_async(lat: float, lng: float) -> Optional[Dict[st
             return data
     except:
         return None
-
-
-
-async def get_current_weather_async(lat: float, lng: float) -> Optional[Dict[str, Any]]:
-    """Get current weather for a location"""
-    # Create cache key based on coordinates
-    cache_key = f"current_weather_{round(lat, 2)}_{round(lng, 2)}"
-    
-    # Check cache first
-    cached_data = weather_cache.get(cache_key)
-    if cached_data is not None:
-        return cached_data
-    
-    try:
-        weather_url = f"https://marine.weather.gov/MapClick.php?lat={lat}&lon={lng}&unit=0&lg=english&FcstType=json"
-        async with httpx.AsyncClient() as client:
-            r = await client.get(weather_url, timeout=5.0)
-            r.raise_for_status()
-            data = r.json()
-            
-            # Cache the result for 10 minutes (current weather changes more frequently)
-            weather_cache.set(cache_key, data, ttl=600)
-            return data
-    except:
-        return None
-
- 
