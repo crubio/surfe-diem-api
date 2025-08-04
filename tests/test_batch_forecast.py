@@ -69,25 +69,13 @@ def mock_weather_data():
     """Mock weather API response data."""
     return {
         "current": {
-            "wind_speed_10m": 15.5,
-            "wind_direction_10m": 180
-        },
-        "hourly": {
-            "wave_height": [3.2, 3.5, 3.8],
-            "wave_direction": [245, 250, 255],
-            "wave_period": [12, 13, 14]
+            "swell_wave_height": 3.2,
+            "swell_wave_direction": 245,
+            "swell_wave_period": 12
         }
     }
 
-@pytest.fixture
-def mock_current_weather_data():
-    """Mock current weather API response data."""
-    return {
-        "currentobservation": {
-            "Temp": "68",
-            "Weather": "Partly Cloudy"
-        }
-    }
+
 
 @pytest.fixture
 def mock_buoy_observation_data():
@@ -143,7 +131,7 @@ class TestBatchForecastEndpoint:
             assert "swell" in weather
             assert "wind" in weather
             assert weather["swell"]["height"] == 3.2
-            assert weather["wind"]["speed"] == 15.5
+            assert weather["wind"] is None  # Wind data is not available
     
     def test_batch_forecast_success_spots_only(self, mock_db_session, sample_spot_locations,
                                              mock_weather_data):
@@ -328,11 +316,11 @@ class TestCacheEndpoints:
 class TestWeatherDataExtraction:
     """Test suite for weather data extraction function."""
     
-    def test_extract_essential_weather_valid_data(self, mock_weather_data, mock_current_weather_data):
+    def test_extract_essential_weather_valid_data(self, mock_weather_data):
         """Test extracting essential weather data with valid inputs."""
         from app.routers.batch import extract_essential_weather
         
-        result = extract_essential_weather(mock_weather_data, mock_current_weather_data)
+        result = extract_essential_weather(mock_weather_data)
         
         # Check structure
         assert "swell" in result
@@ -344,19 +332,17 @@ class TestWeatherDataExtraction:
         assert result["swell"]["direction"] == 245
         assert result["swell"]["period"] == 12
         
-        # Check wind data
-        assert result["wind"]["speed"] == 15.5
-        assert result["wind"]["direction"] == 180
+        # Check wind data (should be None since wind is not available)
+        assert result["wind"] is None
         
-        # Check current data
-        assert result["current"]["temperature"] == "68"
-        assert result["current"]["conditions"] == "Partly Cloudy"
+        # Check current data (should be None since we removed current_weather)
+        assert result["current"] is None
     
     def test_extract_essential_weather_none_data(self):
         """Test extracting essential weather data with None inputs."""
         from app.routers.batch import extract_essential_weather
         
-        result = extract_essential_weather(None, None)
+        result = extract_essential_weather(None)
         
         # Should return structure with None values
         assert result["swell"] is None
@@ -367,9 +353,9 @@ class TestWeatherDataExtraction:
         """Test extracting essential weather data with partial data."""
         from app.routers.batch import extract_essential_weather
         
-        result = extract_essential_weather(mock_weather_data, None)
+        result = extract_essential_weather(mock_weather_data)
         
-        # Should have swell and wind data but no current data
+        # Should have swell data but no wind or current data
         assert result["swell"] is not None
-        assert result["wind"] is not None
+        assert result["wind"] is None
         assert result["current"] is None 
