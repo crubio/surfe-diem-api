@@ -28,7 +28,7 @@ class SpotLocation:
             "type": "Feature",
             "geometry": {
                 "type": "Point",
-                "coordinates": [self.longitude, self.latitude],  # GeoJSON: [lon, lat]
+                "coordinates": [self.longitude, self.latitude],
             },
             "properties": {
                 "id": self.id,
