@@ -9,6 +9,7 @@ class SpotLocation:
     latitude: float
     longitude: float
     subregion_name: str
+    slug: str
 
     @classmethod
     def from_obj(cls, spot_location):
@@ -18,7 +19,8 @@ class SpotLocation:
             timezone=spot_location.timezone,
             latitude=spot_location.latitude,
             longitude=spot_location.longitude,
-            subregion_name=spot_location.subregion_name
+            subregion_name=spot_location.subregion_name,
+            slug=spot_location.slug
         )
 
     def get_geojson(self) -> Dict:
@@ -33,6 +35,7 @@ class SpotLocation:
                 "name": self.name,
                 "timezone": self.timezone,
                 "subregion_name": self.subregion_name,
-                "type": "spot_location"
+                "type": "spot_location",
+                "slug": self.slug
             }
         }
