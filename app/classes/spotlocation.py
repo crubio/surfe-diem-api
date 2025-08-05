@@ -33,5 +33,6 @@ class SpotLocation:
                 "name": self.name,
                 "timezone": self.timezone,
                 "subregion_name": self.subregion_name,
+                "type": "spot_location"
             }
         }
