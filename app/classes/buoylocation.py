@@ -87,6 +87,7 @@ class BuoyLocation:
                 "description": self.description,
                 "url": self.url,
                 "location": self.location,
+                "type": "buoy_location"
             }
         }
         return feature_object
