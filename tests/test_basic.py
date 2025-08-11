@@ -196,30 +196,34 @@ def test_tides_find_closest_out_of_range():
 
 def test_tides_stations_endpoint_success():
     """Test successful get all tide stations endpoint call."""
-    with patch('app.routers.tides.get_db') as mock_get_db:
-        # Mock database session with sample tide stations
-        mock_db = Mock()
-        mock_stations = [
-            Mock(
-                id=1,
-                station_id="9414290",
-                station_name="San Diego, CA",
-                latitude="32.7157",
-                longitude="-117.1617"
-            ),
-            Mock(
-                id=2,
-                station_id="9410230",
-                station_name="La Jolla, CA",
-                latitude="32.8669",
-                longitude="-117.2567"
-            )
-        ]
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_stations
-        mock_get_db.return_value = mock_db
+    with patch('app.routers.tides.TidesService') as mock_service_class:
+        # Mock the service instance and its method
+        mock_service = Mock()
+        mock_service.get_tide_stations.return_value = {
+            "stations": [
+                {
+                    "id": 1,
+                    "station_id": "9414290",
+                    "station_name": "San Diego, CA",
+                    "latitude": "32.7157",
+                    "longitude": "-117.1617"
+                },
+                {
+                    "id": 2,
+                    "station_id": "9410230",
+                    "station_name": "La Jolla, CA",
+                    "latitude": "32.8669",
+                    "longitude": "-117.2567"
+                }
+            ],
+            "total": 2,
+            "limit": 10,
+            "offset": 0
+        }
+        mock_service_class.return_value = mock_service
         
         client = TestClient(app)
-        response = client.get("/tides/stations?limit=10&offset=0")
+        response = client.get("/api/v1/tides/stations?limit=10&offset=0")
         
         assert response.status_code == 200
         data = response.json()
@@ -235,40 +239,47 @@ def test_tides_stations_endpoint_success():
         assert first_station["station_name"] == "San Diego, CA"
         assert first_station["latitude"] == "32.7157"
         assert first_station["longitude"] == "-117.1617"
+        
+        # Verify service was called correctly
+        mock_service.get_tide_stations.assert_called_once_with(limit=10, offset=0)
 
 def test_tides_stations_endpoint_no_stations():
     """Test get all tide stations when no stations exist."""
-    with patch('app.routers.tides.get_db') as mock_get_db:
-        # Mock empty database
-        mock_db = Mock()
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = []
-        mock_get_db.return_value = mock_db
+    with patch('app.routers.tides.TidesService') as mock_service_class:
+        # Mock the service to raise ValueError
+        mock_service = Mock()
+        mock_service.get_tide_stations.side_effect = ValueError("No tide stations found in database")
+        mock_service_class.return_value = mock_service
         
         client = TestClient(app)
-        response = client.get("/tides/stations")
+        response = client.get("/api/v1/tides/stations")
         
         assert response.status_code == 404
-        assert "No tide stations found" in response.json()["detail"]
+        assert "No tide stations found in database" in response.json()["detail"]
 
 def test_tides_stations_endpoint_pagination():
     """Test tide stations endpoint pagination."""
-    with patch('app.routers.tides.get_db') as mock_get_db:
-        # Mock database session with pagination
-        mock_db = Mock()
-        mock_stations = [
-            Mock(
-                id=3,
-                station_id="9410660",
-                station_name="Los Angeles, CA",
-                latitude="33.7203",
-                longitude="-118.2728"
-            )
-        ]
-        mock_db.query.return_value.offset.return_value.limit.return_value.all.return_value = mock_stations
-        mock_get_db.return_value = mock_db
+    with patch('app.routers.tides.TidesService') as mock_service_class:
+        # Mock the service instance and its method
+        mock_service = Mock()
+        mock_service.get_tide_stations.return_value = {
+            "stations": [
+                {
+                    "id": 3,
+                    "station_id": "9410660",
+                    "station_name": "Los Angeles, CA",
+                    "latitude": "33.7203",
+                    "longitude": "-118.2728"
+                }
+            ],
+            "total": 1,
+            "limit": 1,
+            "offset": 2
+        }
+        mock_service_class.return_value = mock_service
         
         client = TestClient(app)
-        response = client.get("/tides/stations?limit=1&offset=2")
+        response = client.get("/api/v1/tides/stations?limit=1&offset=2")
         
         assert response.status_code == 200
         data = response.json()
@@ -276,6 +287,9 @@ def test_tides_stations_endpoint_pagination():
         assert data["limit"] == 1
         assert data["offset"] == 2
         assert data["stations"][0]["station_id"] == "9410660"
+        
+        # Verify service was called correctly
+        mock_service.get_tide_stations.assert_called_once_with(limit=1, offset=2)
 
 def test_tides_station_by_id_endpoint_success():
     """Test successful get tide station by ID endpoint call."""

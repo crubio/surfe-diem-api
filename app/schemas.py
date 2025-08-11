@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, conint, ConfigDict
+from pydantic import BaseModel, EmailStr, conint, ConfigDict, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -148,4 +148,78 @@ class BatchForecastResponse(BaseModel):
     buoys: List[Dict[str, Any]]
     spots: List[Dict[str, Any]]
     errors: List[Dict[str, Any]]
+    
+# Tides Schemas
+class TideStationSearchRequest(BaseModel):
+    """Request schema for finding closest tide station"""
+    lat: float = Field(..., ge=-90, le=90, description="Latitude (-90 to 90)")
+    lng: float = Field(..., ge=-180, le=180, description="Longitude (-180 to 180)")
+    dist: float = Field(default=50, gt=0, description="Search radius in miles")
+
+
+class CurrentTidesRequest(BaseModel):
+    """Request schema for current tides endpoint"""
+    station: str = Field(..., description="NOAA station ID")
+    interval: str = Field(default="hour", description="Data interval")
+    date: str = Field(default="latest", description="Date for data (latest, today, YYYYMMDD)")
+    product: str = Field(default="water_level", description="Data type")
+    datum: str = Field(default="MLLW", description="Vertical reference")
+    time_zone: str = Field(default="gmt", description="Time zone")
+    units: str = Field(default="english", description="Measurement units")
+    application: str = Field(default="surfe-diem.com", description="Application name")
+    format: str = Field(default="json", description="Response format")
+
+
+class HistoricalTidesRequest(BaseModel):
+    """Request schema for historical tides endpoint"""
+    station: str = Field(..., description="NOAA station ID")
+    begin_date: Optional[str] = Field(None, description="Start date (YYYYMMDD)")
+    end_date: Optional[str] = Field(None, description="End date (YYYYMMDD)")
+    product: str = Field(default="predictions", description="Data type")
+    datum: str = Field(default="MLLW", description="Vertical reference")
+    date: str = Field(default="today", description="Date for data")
+    time_zone: str = Field(default="gmt", description="Time zone")
+    interval: str = Field(default="hilo", description="Data interval")
+    units: str = Field(default="english", description="Measurement units")
+    application: str = Field(default="surfe-diem.com", description="Application name")
+    format: str = Field(default="json", description="Response format")
+
+
+class TideStationsListRequest(BaseModel):
+    """Request schema for listing tide stations"""
+    limit: int = Field(default=100, ge=1, le=1000, description="Number of stations to return")
+    offset: int = Field(default=0, ge=0, description="Number of stations to skip")
+
+
+class TideStationDistance(BaseModel):
+    """Response schema for closest tide station search"""
+    station_id: str
+    distance: float
+    latitude: float
+    longitude: float
+
+
+class TideStation(BaseModel):
+    """Response schema for individual tide station"""
+    id: int
+    station_id: str
+    station_name: str
+    latitude: float
+    longitude: float
+
+
+class TideStationsListResponse(BaseModel):
+    """Response schema for list of tide stations"""
+    stations: List[TideStation]
+    total: int
+    limit: int
+    offset: int
+
+
+# NOAA API Response Schemas (for when we get data back)
+class NOAATidesResponse(BaseModel):
+    """Generic NOAA API response wrapper"""
+    # This will be flexible since NOAA responses vary by endpoint
+    # We'll use dict[str, Any] for now and can make more specific later
+    pass 
     
