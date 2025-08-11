@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status, APIRouter
 from geopy import distance
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..services.tides_service import TidesService
 
 router = APIRouter(
     prefix="/api/v1",
@@ -189,29 +190,14 @@ def get_all_tide_stations(
     db: Session = Depends(get_db)
 ):
     '''Get all tide stations with metadata for admin panel auditing'''
-    stations = db.query(models.TideStation).offset(offset).limit(limit).all()
-    
-    if not stations:
+    try:
+        tides_service = TidesService(db)
+        return tides_service.get_tide_stations(limit=limit, offset=offset)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
-            detail="No tide stations found in database"
+            detail=str(e)
         )
-    
-    return {
-        "stations": [
-            {
-                "id": station.id,
-                "station_id": station.station_id,
-                "station_name": station.station_name,
-                "latitude": station.latitude,
-                "longitude": station.longitude
-            }
-            for station in stations
-        ],
-        "total": len(stations),
-        "limit": limit,
-        "offset": offset
-    }
 
 @router.get("/tides/stations/{station_id}")
 def get_tide_station_by_id(station_id: str, db: Session = Depends(get_db)):
