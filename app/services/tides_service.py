@@ -163,3 +163,23 @@ class TidesService:
             latitude=station.latitude,
             longitude=station.longitude
         )
+    
+    def delete_tide_station(self, station_id: str) -> None:
+        """
+        Delete a tide station by station_id
+        
+        Args:
+            station_id: NOAA station ID
+            
+        Raises:
+            ValueError: If station not found
+        """
+        station = self.db.query(TideStation).filter(
+            TideStation.station_id == station_id
+        ).first()
+        
+        if not station:
+            raise ValueError(f"Tide station {station_id} not found")
+        
+        self.db.delete(station)
+        self.db.commit()

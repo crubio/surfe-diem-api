@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..services.tides_service import TidesService
 from ..schemas import CurrentTidesRequest, HistoricalTidesRequest
+from .. import schemas, oauth2
 
 router = APIRouter(
     prefix="/api/v1",
@@ -89,4 +90,26 @@ def get_tide_station_by_id(station_id: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND, 
             detail=str(e)
         )
+
+@router.delete("/tides/stations/{station_id}")
+def delete_tide_station(
+    station_id: str, 
+    db: Session = Depends(get_db),
+    current_user: schemas.UserResponse = Depends(oauth2.get_current_user)
+):
+    """Delete a tide station (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
     
+    try:
+        tides_service = TidesService(db)
+        tides_service.delete_tide_station(station_id)
+        return {"message": f"Tide station {station_id} deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
