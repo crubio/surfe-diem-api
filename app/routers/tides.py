@@ -6,136 +6,44 @@ from geopy import distance
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..services.tides_service import TidesService
-from ..schemas import HistoricalTidesRequest
+from ..schemas import CurrentTidesRequest, HistoricalTidesRequest
 
 router = APIRouter(
     prefix="/api/v1",
     tags=["Tides"]
 )
 
-# Sample request:
-# https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?
-#   begin_date=20250801&
-#   end_date=20250831&
-#   date=today&
-#   station=8557863&
-#   product=predictions&
-#   datum=MLLW&
-#   time_zone=lst_ldt&
-#   interval=hilo&
-#   units=english&
-#   application=DataAPI_Sample&
-#   format=json
-
-tides_url = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
-
 @router.get("/tides/find_closest")
-def get_closest_tide_station(lat: float, lng: float, dist: float = 50, db: Session = Depends(get_db)):
-    '''Get the closest tide station to a given lat & lng'''
-    stations = db.query(models.TideStation.station_id, models.TideStation.latitude, models.TideStation.longitude).all()
-
-    if not stations:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No tide stations found in database")
-
-    best = []
-    for station in stations:
-        station_distance: float = distance.distance((lat, lng), (station.latitude, station.longitude)).miles
-        if station_distance < dist:
-            best.append({
-                "station_id": station.station_id, 
-                "distance": station_distance, 
-                "latitude": station.latitude, 
-                "longitude": station.longitude
-            })
-    sorted_best = sorted(best, key=lambda k: k['distance'])
-    
-    if not sorted_best:
+def get_closest_tide_station(
+    lat: float,
+    lng: float,
+    dist: float = 50,
+    db: Session = Depends(get_db)
+):
+    """Find the closest tide station within the specified distance radius."""
+    try:
+        tides_service = TidesService(db)
+        return tides_service.find_closest_tide_station(lat, lng, dist)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"No tide stations found within {dist} miles of coordinates ({lat}, {lng})"
+            detail=str(e)
         )
-    
-    return sorted_best[0]
 
-
-"""
-NOAA Tides and Currents API Documentation
-
-Base URL: https://api.tidesandcurrents.noaa.gov/api/prod/datagetter
-
-Example request for /tides/current:
-GET https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?
-    date=today&
-    station=9414290&
-    product=water_level&
-    datum=MLLW&
-    time_zone=gmt&
-    units=english&
-    application=surfe-diem.com&
-    format=json
-
-Parameters for /tides/current:
-- station: NOAA station ID (e.g., 9414290 for San Diego) [required]
-- date: Date for data (today, yesterday, YYYYMMDD) [default: today]
-- product: Data type (water_level, predictions, etc.) [default: water_level]
-- datum: Vertical reference (MLLW, NAVD88, etc.) [default: MLLW]
-- time_zone: Time zone (gmt, lst_ldt, etc.) [default: gmt]
-- units: Measurement units (english, metric) [default: english]
-- application: Application name for tracking [default: surfe-diem.com]
-- format: Response format (json, xml, csv) [default: json]
-
-Parameters for /tides (historical data):
-- station: NOAA station ID [required]
-- begin_date/end_date: Date range for historical data [optional]
-- product: Data type [default: predictions]
-- datum: Vertical reference [default: MLLW]
-- date: Date for data [default: today]
-- time_zone: Time zone [default: gmt]
-- interval: Data interval (hilo, h, 6, etc.) [default: hilo]
-- units: Measurement units [default: english]
-- application: Application name [default: surfe-diem.com]
-- format: Response format [default: json]
-
-Please see NOAA documentation for more details: https://api.tidesandcurrents.noaa.gov/api/prod/responseHelp.html
-"""
 @router.get("/tides/current")
-def get_current_tides(
+async def get_current_tides(
     station: str,
-    interval: str = "hour",
-    date: str = "latest", 
-    product: str = "water_level", 
-    datum: str = "MLLW", 
-    time_zone: str = "gmt", 
-    units: str = "english", 
-    application: str = "surfe-diem.com", 
-    format: str = "json"
+    db: Session = Depends(get_db)
 ):
-    '''Get the current tides for a given station'''
-    params = {
-        "station": station,
-        "interval": interval,
-        "product": product,
-        "datum": datum,
-        "time_zone": time_zone,
-        "units": units,
-        "application": application,
-        "format": format,
-        "date": date
-    }
-
+    """Get current water level data for a specific tide station."""
     try:
-        r = httpx.get(tides_url, params=params)
-        r.raise_for_status()
-        return r.json()
-    except httpx.RequestError as exc:
+        tides_service = TidesService(db)
+        request = CurrentTidesRequest(station=station)
+        return await tides_service.get_current_tides(request)
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail=f"Failed to connect to NOAA API: {exc.request.url!r}"
-        )
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(
-            status_code=exc.response.status_code, 
-            detail=f"NOAA API error: {exc.response.reason_phrase}"
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=str(e)
         )
     
 @router.get("/tides")
@@ -143,7 +51,7 @@ async def get_tides_summary(
     station: str,
     db: Session = Depends(get_db)
 ):
-    '''Get the summary of tides for a given station'''
+    """Get tide summary (last 2 high/low tides) for a specific station."""
     try:
         tides_service = TidesService(db)
         request = HistoricalTidesRequest(station=station)
@@ -160,7 +68,7 @@ def get_all_tide_stations(
     offset: int = 0, 
     db: Session = Depends(get_db)
 ):
-    '''Get all tide stations with metadata for admin panel auditing'''
+    """Get paginated list of all tide stations for admin auditing."""
     try:
         tides_service = TidesService(db)
         return tides_service.get_tide_stations(limit=limit, offset=offset)
@@ -172,22 +80,13 @@ def get_all_tide_stations(
 
 @router.get("/tides/stations/{station_id}")
 def get_tide_station_by_id(station_id: str, db: Session = Depends(get_db)):
-    '''Get a specific tide station by station_id'''
-    station = db.query(models.TideStation).filter(
-        models.TideStation.station_id == station_id
-    ).first()
-    
-    if not station:
+    """Get metadata for a specific tide station by ID."""
+    try:
+        tides_service = TidesService(db)
+        return tides_service.get_tide_station_by_id(station_id)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Tide station {station_id} not found"
+            detail=str(e)
         )
-    
-    return {
-        "id": station.id,
-        "station_id": station.station_id,
-        "station_name": station.station_name,
-        "latitude": station.latitude,
-        "longitude": station.longitude
-    }
     
