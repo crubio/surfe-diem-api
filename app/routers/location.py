@@ -80,7 +80,11 @@ def get_closest_spot(lat: float, lng: float, dist: float = 50, db: Session = Dep
 
     best = []
     for spot in spots:
-        spot_distance = distance.distance((lat, lng), (spot.latitude, spot.longitude)).miles
+        try:
+            spot_distance = distance.distance((lat, lng), (spot.latitude, spot.longitude)).miles
+        except Exception as e:
+            print(f"Error calculating distance for spot {spot.name}:{spot.id} {str(e)}")
+            continue
         if spot_distance < dist:
             best.append({"id": spot.id, "name": spot.name, "subregion_name": spot.subregion_name, "distance": spot_distance, "latitude": spot.latitude, "longitude": spot.longitude, "slug": spot.slug})
     sorted_best = sorted(best, key=lambda k: k['distance'])
@@ -361,7 +365,7 @@ def get_location(location_id: str, limit: int = 10, send_html: bool = False):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"location {location_id} not found")
     
     if send_html:
-        df_html = buoy_real_time.get_data().to_html(classes='table table-striped table-hover', index=False)
+        df_html = buoy_real_time.data.to_html(classes='table table-striped table-hover', index=False)
     else:
         df_html = None
     
