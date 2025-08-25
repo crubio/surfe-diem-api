@@ -71,7 +71,7 @@ def get_spots(db: Session = Depends(get_db), limit: int = 500, search: Optional[
     return spots_list
 
 @router.get("/spots/find_closest")
-def get_closest_spot(lat: float, lng: float, dist: float = 50, db: Session = Depends(get_db)):
+def get_closest_spot(lat: float, lng: float, dist: float = 100, db: Session = Depends(get_db)):
     '''Get the closest surf spot to a given lat & lng'''
     spots = db.query(models.SpotLocation).all()
     

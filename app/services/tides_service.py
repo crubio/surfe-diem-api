@@ -64,7 +64,7 @@ class TidesService:
         async with self.noaa_client as client:
             return await client.get_historical_tides(hilo_request)
     
-    def find_closest_tide_station(self, lat: float, lng: float, max_distance: float = 50) -> TideStationDistance:
+    def find_closest_tide_station(self, lat: float, lng: float, max_distance: float = 100) -> TideStationDistance:
         """
         Find the closest tide station to given coordinates
         
