@@ -18,7 +18,7 @@ router = APIRouter(
 def get_closest_tide_station(
     lat: float,
     lng: float,
-    dist: float = 50,
+    dist: float = 100,
     db: Session = Depends(get_db)
 ):
     """Find the closest tide station within the specified distance radius."""
