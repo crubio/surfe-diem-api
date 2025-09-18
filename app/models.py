@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy import DateTime, JSON, UniqueConstraint, Enum
 from .database import Base
 
 class Test(Base):
@@ -101,3 +102,20 @@ class UserLocation(Base):
     __tablename__ = "user_location"
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     location_id = Column(Integer, ForeignKey("buoy_location.location_id", ondelete="CASCADE"), primary_key=True)
+
+# SpotAccuracyRating model for spot_accuracy_rating table
+class SpotAccuracyRating(Base):
+    __tablename__ = "spot_accuracy_rating"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    spot_id = Column(Integer, nullable=False)
+    spot_slug = Column(String(128), nullable=False)
+    rating = Column(Enum('accurate', 'not_accurate', name='spot_rating_enum'), nullable=False)
+    forecast_json = Column(JSON, nullable=True)
+    timestamp = Column(DateTime, nullable=False)
+    session_id = Column(String(128), nullable=False)
+    ip_address = Column(String(45), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint('spot_id', 'session_id', 'ip_address', 'timestamp', name='uq_spot_session_ip_date'),
+    )
