@@ -143,7 +143,7 @@ def get_spot_by_slug(slug: str, db: Session = Depends(get_db)):
     
     return spot
 
-@router.post("/spots/{spot_id}/rating", response_model=SpotAccuracyRatingResponse)
+@router.post("/spots/{spot_id}/rating")
 def rate_spot_accuracy(
     spot_id: int,
     rating_data: SpotAccuracyRatingCreate,
@@ -194,9 +194,9 @@ def rate_spot_accuracy(
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to save rating. Please try again later.")
 
-    response = JSONResponse(content=jsonable_encoder(new_rating))
+    response = JSONResponse(content={"message": "Rating submitted successfully", "rating": jsonable_encoder(new_rating.rating) })
     if set_cookie:
-        response.set_cookie(key="surfe-diem-session-id", value=session_id, httponly=True, max_age=60*60*24*365)
+        response.set_cookie(key="surfe-diem-session-id", value=session_id, httponly=True, max_age=60*60*24)
     return response
 
 def generate_slug(name: str) -> str:

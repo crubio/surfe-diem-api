@@ -60,6 +60,7 @@ class TestSpotRatingEndpoint:
             )
             
             assert response.status_code == 200
+            assert response.json() == {"message": "Rating submitted successfully", "rating": "accurate"}
             
             # Verify database operations were called
             mock_db.add.assert_called_once()
@@ -149,6 +150,7 @@ class TestSpotRatingEndpoint:
             )
             
             assert response.status_code == 200
+            assert response.json() == {"message": "Rating submitted successfully", "rating": "accurate"}
             
             # Check that session cookie was set in response
             assert "surfe-diem-session-id" in response.cookies
@@ -252,6 +254,7 @@ class TestSpotRatingEndpoint:
             )
             
             assert response.status_code == 200
+            assert response.json() == {"message": "Rating submitted successfully", "rating": "accurate"}
             
             # Verify the add method was called (meaning the rating was created)
             mock_db.add.assert_called_once()
@@ -292,6 +295,7 @@ class TestSpotRatingEndpoint:
                 cookies={"surfe-diem-session-id": "test-session-1"}
             )
             assert response.status_code == 200
+            assert response.json() == {"message": "Rating submitted successfully", "rating": "accurate"}
             
             # Reset mocks for second test
             mock_db.reset_mock()
@@ -312,5 +316,6 @@ class TestSpotRatingEndpoint:
                 cookies={"surfe-diem-session-id": "test-session-2"}
             )
             assert response.status_code == 200
+            assert response.json() == {"message": "Rating submitted successfully", "rating": "not_accurate"}
         finally:
             app.dependency_overrides.clear()
