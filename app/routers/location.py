@@ -1,16 +1,21 @@
+from datetime import datetime, timezone
 from typing import List, Union, Optional
 import httpx
 import re
 
-from fastapi import Depends, HTTPException, Response, status, APIRouter
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+
+from fastapi import Depends, HTTPException, Response, status, APIRouter, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from geopy import distance
 from unidecode import unidecode
+from uuid import uuid4
 
 from ..database import get_db
 from .. import models, oauth2
-from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation, SpotLocationResponse, SpotLocationPost)
+from ..schemas import (BuoyLocationNOAASummary, BuoyLocationPost, BuoyLocationResponse, BuoyLocationPut, BuoyLocationLatestObservation, SpotLocationResponse, SpotLocationPost, SpotAccuracyRatingCreate, SpotAccuracyRatingResponse, SpotRatingEnum)
 from ..classes import buoylatestobservation as buoy, buoylocation as buoy_location, spotlocation as spot_location
 
 router = APIRouter(
@@ -127,6 +132,7 @@ def get_spot_instance(spot_id: str, db: Session = Depends(get_db)):
     
     return spot
 
+
 @router.get("/spots/slug/{slug}", response_model=SpotLocationResponse)
 def get_spot_by_slug(slug: str, db: Session = Depends(get_db)):
     '''Get a spot by slug explicitly'''
@@ -136,6 +142,62 @@ def get_spot_by_slug(slug: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"spot with slug '{slug}' not found")
     
     return spot
+
+@router.post("/spots/{spot_id}/rating", response_model=SpotAccuracyRatingResponse)
+def rate_spot_accuracy(
+    spot_id: int,
+    rating_data: SpotAccuracyRatingCreate,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    '''Rate the accuracy of a spot's forecast'''
+    # Get session_id from cookie or generate one if not present
+    session_id = request.cookies.get("surfe-diem-session-id")
+    set_cookie = False
+    if not session_id:
+        session_id = f"session_{uuid4().hex}"
+        set_cookie = True
+    ip_address = request.client.host
+
+    # Check if spot exists
+    spot = db.query(models.SpotLocation).filter(models.SpotLocation.id == spot_id).first()
+    if not spot:
+        raise HTTPException(status_code=404, detail="Spot not found")
+
+    # Enforce one rating per session/IP per spot per day
+    today = datetime.now().date()
+    existing_rating = db.query(models.SpotAccuracyRating).filter(
+        models.SpotAccuracyRating.spot_id == spot_id,
+        models.SpotAccuracyRating.session_id == session_id,
+        models.SpotAccuracyRating.ip_address == ip_address,
+        func.date(models.SpotAccuracyRating.timestamp) == today
+    ).first()
+    if existing_rating:
+        raise HTTPException(status_code=409, detail="You have already rated this spot today.")
+    # Create new rating
+    new_rating = models.SpotAccuracyRating(
+        spot_id=spot_id,
+        spot_slug=spot.slug,
+        rating=rating_data.rating.value if isinstance(rating_data.rating, SpotRatingEnum) else rating_data.rating,
+        forecast_json=rating_data.forecast_json,
+        timestamp=datetime.now(timezone.utc),
+        session_id=session_id,
+        ip_address=ip_address,
+        user_id=rating_data.user_id
+    )
+    
+    try:
+        db.add(new_rating)
+        db.commit()
+        db.refresh(new_rating)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to save rating. Please try again later.")
+
+    response = JSONResponse(content=jsonable_encoder(new_rating))
+    if set_cookie:
+        response.set_cookie(key="surfe-diem-session-id", value=session_id, httponly=True, max_age=60*60*24*365)
+    return response
 
 def generate_slug(name: str) -> str:
     """Generate a URL-friendly slug from spot name."""
