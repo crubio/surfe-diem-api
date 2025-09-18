@@ -216,10 +216,29 @@ class TideStationsListResponse(BaseModel):
     offset: int
 
 
-# NOAA API Response Schemas (for when we get data back)
-class NOAATidesResponse(BaseModel):
-    """Generic NOAA API response wrapper"""
-    # This will be flexible since NOAA responses vary by endpoint
-    # We'll use dict[str, Any] for now and can make more specific later
-    pass 
+
+# Spot Accuracy Rating Schemas
+from enum import Enum as PyEnum
+
+class SpotRatingEnum(PyEnum):
+    accurate = "accurate"
+    not_accurate = "not_accurate"
+
+class SpotAccuracyRatingBase(BaseModel):
+    spot_id: int
+    spot_slug: str
+    rating: SpotRatingEnum
+    forecast_json: dict
+    timestamp: datetime
+    session_id: str
+    ip_address: str
+    user_id: Optional[int] = None
+
+class SpotAccuracyRatingCreate(SpotAccuracyRatingBase):
+    pass
+
+class SpotAccuracyRatingResponse(SpotAccuracyRatingBase):
+    id: int
+    class Config:
+        orm_mode = True
     
