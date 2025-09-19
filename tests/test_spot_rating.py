@@ -6,7 +6,12 @@ from app.main import app
 from app.database import get_db
 
 class TestSpotRatingEndpoint:
-    """Test suite for the spot rating endpoint."""
+    """Test suite for the spot rating endpoint.
+    
+    Note: These tests use mocks and are compatible with the date range
+    rate limiting logic implemented in the endpoint (using datetime ranges
+    instead of func.date() for better timezone handling).
+    """
     
     def setup_method(self):
         """Set up test client and common test data."""
@@ -35,7 +40,8 @@ class TestSpotRatingEndpoint:
         # Mock query chain for spot lookup and rating check
         mock_db.query.return_value.filter.return_value.first.side_effect = [
             mock_spot,  # First call: spot lookup
-            None        # Second call: existing rating check
+            None,       # Second call: existing rating check (session+IP+date range)
+            None        # Third call: fallback IP+date range check
         ]
         
         # Mock successful database operations
@@ -105,7 +111,8 @@ class TestSpotRatingEndpoint:
         
         mock_db.query.return_value.filter.return_value.first.side_effect = [
             mock_spot,           # First call: spot lookup
-            mock_existing_rating # Second call: existing rating check
+            mock_existing_rating, # Second call: existing rating check (session+IP+date range)
+            None                 # Third call won't be reached since second found a match
         ]
         
         app.dependency_overrides[get_db] = lambda: mock_db

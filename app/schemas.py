@@ -224,20 +224,25 @@ class SpotRatingEnum(PyEnum):
     accurate = "accurate"
     not_accurate = "not_accurate"
 
+class SpotAccuracyRatingCreate(BaseModel):
+    """Schema for frontend to send rating data"""
+    rating: SpotRatingEnum
+    forecast_json: Optional[dict] = None
+    user_id: Optional[int] = None
+
 class SpotAccuracyRatingBase(BaseModel):
+    """Complete rating record with server-generated fields"""
     spot_id: int
     spot_slug: str
     rating: SpotRatingEnum
-    forecast_json: dict
+    forecast_json: Optional[dict] = None
     timestamp: datetime
     session_id: str
     ip_address: str
     user_id: Optional[int] = None
 
-class SpotAccuracyRatingCreate(SpotAccuracyRatingBase):
-    pass
-
 class SpotAccuracyRatingResponse(SpotAccuracyRatingBase):
+    """Database model response"""
     id: int
     class Config:
         orm_mode = True
