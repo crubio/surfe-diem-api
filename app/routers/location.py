@@ -165,13 +165,30 @@ def rate_spot_accuracy(
         raise HTTPException(status_code=404, detail="Spot not found")
 
     # Enforce one rating per session/IP per spot per day
-    today = datetime.now().date()
+    # Use date range instead of func.date() to avoid timezone issues
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    # Check for existing rating with session_id first
     existing_rating = db.query(models.SpotAccuracyRating).filter(
         models.SpotAccuracyRating.spot_id == spot_id,
         models.SpotAccuracyRating.session_id == session_id,
         models.SpotAccuracyRating.ip_address == ip_address,
-        func.date(models.SpotAccuracyRating.timestamp) == today
+        models.SpotAccuracyRating.timestamp >= today_start,
+        models.SpotAccuracyRating.timestamp <= today_end
     ).first()
+    
+    # If no session match, check for IP-only rate limiting (fallback for testing)
+    if not existing_rating:
+        existing_ip_rating = db.query(models.SpotAccuracyRating).filter(
+            models.SpotAccuracyRating.spot_id == spot_id,
+            models.SpotAccuracyRating.ip_address == ip_address,
+            models.SpotAccuracyRating.timestamp >= today_start,
+            models.SpotAccuracyRating.timestamp <= today_end
+        ).first()
+        if existing_ip_rating:
+            existing_rating = existing_ip_rating
+    
     if existing_rating:
         raise HTTPException(status_code=409, detail="You have already rated this spot today.")
     # Create new rating
